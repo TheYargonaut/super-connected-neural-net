@@ -1,4 +1,4 @@
-#Superconnected Neural Networks
+# Superconnected Neural Networks
 
 ## Batch size
 
