@@ -23,6 +23,11 @@ def dualScalarTest( DualType ):
     y = a * b
     assert y == -10
     assert y.e_ == 8
+    y = abs( b )
+    assert y == 1
+    assert y.e_ == -1
+    y = a.where( b < 1, b )
+    assert y == b
 
 def dualTensorTest( DualType ):
     '''dual numbers optimized for tensors'''
@@ -48,6 +53,9 @@ def dualTensorTest( DualType ):
     assert np.all( y.e_ == [ [  2, 12,  2 ],
                              [  5,  5, 11 ],
                              [ -6, 18, 14 ] ] )
+    y = abs( c )
+    assert np.all( y == [ 5, 10, 20 ] )
+    assert np.all( y.e_ == [ 1, -1, 1 ] )
 
 def dualGradientTest( DualType ):
     '''dual numbers for multiple independant variables'''

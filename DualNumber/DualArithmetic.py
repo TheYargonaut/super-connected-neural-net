@@ -40,9 +40,10 @@ class DualNumber( object ):
     def __pow__( self, other ):
         if isinstance( other, DualNumber ):
             raise NotImplementedError
-        return type(self)( self.x_ ** other, other * self.e_ * ( self.x_ ** (other - 1) ) )
+        inft = other * self.e_ * ( self.x_ ** (other - 1) )
+        return type(self)( self.x_ ** other, inft )
 
-    # assignment ops
+    # in-place assignment operators
     def __iadd__( self, other ):
         if isinstance( other, DualNumber ):
             self.x_ += other.x_
@@ -70,6 +71,16 @@ class DualNumber( object ):
             raise NotImplementedError
         self.e_ *= other * ( self.x_ ** (other - 1) )
         self.x_ **= other
+    def isin( self ):
+        raise NotImplementedError
+    def icos( self ):
+        raise NotImplementedError
+    def itan( self ):
+        raise NotImplementedError
+    def ilog( self, base ):
+        raise NotImplementedError
+    def iln( self ):
+        raise NotImplementedError
 
     # unary ops
     def __neg__( self ):
@@ -78,33 +89,56 @@ class DualNumber( object ):
         '''usually a NOP, treat like shallow copy'''
         return type(self)( self.x_, self.e_ )
     def __abs__( self ):
-        return abs( self.x_ )
+        return type(self)( abs( self.x_ ), self.e_ if self.x_ > 0 else -self.e_ )
     def __invert__( self ):
         return type(self)( self.x_, -self.e_ )
+    def sin( self ):
+        raise NotImplementedError
+    def cos( self ):
+        raise NotImplementedError
+    def tan( self ):
+        raise NotImplementedError
+    def log( self, base ):
+        raise NotImplementedError
+    def ln( self ):
+        raise NotImplementedError
 
-    # comparison ops
-    def compareTo( self, other ):
-        '''equivalent to comparing the numerical type
-        infinitesimal part not considered'''
-        if isinstance( other, DualNumber ):
-            other = other.x_
-        if self.x_ > other:
-            return 1
-        if self.x_ == other:
-            return 0
-        return -1
+    # comparison ops; equivalent to comparing just real type
     def __lt__( self, other ):
-        return self.compareTo( other ) < 0
+        if isinstance( other, DualNumber ):
+            return self.x_ < other.x_
+        return self.x_ < other
     def __le__( self, other ):
-        return self.compareTo( other ) <= 0
+        if isinstance( other, DualNumber ):
+            return self.x_ <= other.x_
+        return self.x_ <= other
     def __eq__( self, other ):
-        return self.compareTo( other ) == 0
+        if isinstance( other, DualNumber ):
+            return self.x_ == other.x_
+        return self.x_ == other
     def __ne__( self, other ):
-        return self.compareTo( other ) != 0
+        if isinstance( other, DualNumber ):
+            return self.x_ != other.x_
+        return self.x_ != other
     def __ge__( self, other ):
-        return self.compareTo( other ) >= 0
+        if isinstance( other, DualNumber ):
+            return self.x_ >= other.x_
+        return self.x_ >= other
     def __gt__( self, other ):
-        return self.compareTo( other ) > 0
+        if isinstance( other, DualNumber ):
+            return self.x_ > other.x_
+        return self.x_ > other
+    
+    # utilities
+    def where( self, condition, other ):
+        '''where condition is true, substitute from other into self for return'''
+        if isinstance( other, DualNumber ):
+            real = other.x_ if condition else self.x_
+            inft = other.e_ if condition else self.e_
+            return type(self)( real, inft )
+        real = other if condition else self.x_
+        inft = 0 if condition else self.e_
+        return type(self)( real, inft )
 
 class DualNumpy( DualNumber ):
     '''Dual numbers for use with Numpy arrays'''
@@ -120,6 +154,20 @@ class DualNumpy( DualNumber ):
     def __str__( self ):
         return "{} + ({})e".format( self.x_, self.e_ )
     
+    # Unary ops
+    def __abs__( self ):
+        return type(self)( abs( self.x_ ), np.where( self.x_ > 0, self.e_, -self.e_ ) )
+    
+    # utilities
+    def where( self, condition, other ):
+        '''where condition is true, substitute from other into self for return '''
+        if isinstance( other, DualNumber ):
+            real = np.where( condition, other.x_, self.x_ )
+            inft = np.where( condition, other.e_, self.e_ )
+            return type(self)( real, inft )
+        real = np.where( condition, other, self.x_ )
+        inft = np.where( condition, 0, self.e_ )
+        return type(self)( real, inft )
     def concatenate( self ):
         pass
 
@@ -179,9 +227,6 @@ class DualGrad( DualNumpy ):
         '''usually a NOP, treat like shallow copy'''
         return DualGrad( self.x_, self.e_, self.n_ )
     def __abs__( self ):
-        return abs( self.x_ )
+        return type(self)( abs( self.x_ ), np.where( self.x_ > 0, self.e_, -self.e_ ), self.n_ )
     def __invert__( self ):
         return DualGrad( self.x_, -self.e_, self.n_ )
-
-def constructParameter():
-    pass

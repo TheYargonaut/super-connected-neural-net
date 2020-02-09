@@ -1,3 +1,5 @@
+from DualNumber.DualArithmetic import DualNumber
+
 import numpy as np
 
 class Error( object ):
@@ -16,19 +18,29 @@ class Mse( Error ):
       pass
 
    def f( self, target, predicted ):
-      return ( predicted - target )**2
+      return ( predicted - target ) ** 2
 
    def df( self, target, predicted ):
-      return 2 * ( predicted - target )
+      return ( predicted - target ) * 2
 
 class Huber( Error ):
-   def __init__( self, limit=1 ):
+   def __init__( self, delta=1 ):
       '''abstract class'''
-      self.limit_ = limit
-      self.dlimit_ = 2 * np.sqrt( limit )
+      self.delta_ = delta
 
    def f( self, target, predicted ):
-      return np.minimum( np.maximum( -self.limit_, ( predicted - target )**2 ), self.limit_ )
+      diff = abs( predicted - target )
+      full = ( diff ** 2 ) * 0.5
+      limited = ( diff - 0.5 * self.delta_ ) * self.delta_
+      condition = diff > self.delta_
+      if isinstance( diff, DualNumber ):
+         return full.where( condition, limited )
+      return np.where( condition, limited, full )
 
    def df( self, target, predicted ):
-      return np.minimum( np.maximum( -self.dlimit_, 2 * ( predicted - target ) ), self.dlimit_ )
+      full = predicted - target
+      high = full > self.delta_
+      low = full < -self.delta_
+      if isinstance( full, DualNumber ):
+         return full.where( high, self.delta_ ).where( low, -self.delta_ )
+      return np.where( low, -self.delta_, np.where( high, self.delta_, full ) )
