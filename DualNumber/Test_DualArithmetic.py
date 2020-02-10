@@ -86,4 +86,5 @@ suite.append( ( lambda: dualTensorTest( DA.DualGrad ), "DualGrad Tensor Test" ) 
 
 suite.append( ( lambda: dualGradientTest( DA.DualGrad ), "DualGrad Gradient Test" ) )
 
-runSuite( suite )
+if __name__ == "__main__":
+   runSuite( suite )
