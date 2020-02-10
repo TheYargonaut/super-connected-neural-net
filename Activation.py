@@ -43,18 +43,22 @@ class Logistic( object ):
       pass
 
    def f( self, value ):
+      if isinstance( value, Dual ):
+         return ( ( -value ).exp() + 1 ).reciprocal()
       return 1 / ( 1 + np.exp( -value ) )
 
    def df( self, value ):
       lf = self.f( value )
-      return lf * ( 1 - lf )
+      return lf * ( -lf + 1 )
 
 class Tanh( object ):
    def __init__( self ):
       pass
 
    def f( self, value ):
+      if isinstance( value, Dual ):
+         return value.tanh()
       return np.tanh( value )
 
    def df( self, value ):
-      return 1 - np.power( np.tanh( value ), 2 )
+      return -( self.f( value ) ** 2 ) + 1

@@ -71,6 +71,8 @@ class DualNumber( object ):
             raise NotImplementedError
         self.e_ *= other * ( self.x_ ** (other - 1) )
         self.x_ **= other
+    def iexp( self ):
+        raise NotImplementedError
     def isin( self ):
         raise NotImplementedError
     def icos( self ):
@@ -92,12 +94,21 @@ class DualNumber( object ):
         return type(self)( abs( self.x_ ), self.e_ if self.x_ > 0 else -self.e_ )
     def __invert__( self ):
         return type(self)( self.x_, -self.e_ )
+    def exp( self ):
+        real = np.exp( self.x_ )
+        return type(self)( real, real * self.e_ )
+    def reciprocal( self ):
+        return type(self)( 1 ) / self
     def sin( self ):
         raise NotImplementedError
     def cos( self ):
         raise NotImplementedError
     def tan( self ):
         raise NotImplementedError
+    def tanh( self ):
+        real = np.tanh( self.x_ )
+        inft = ( 1 - real ** 2 ) * self.e_
+        return type(self)( real, inft )
     def log( self, base ):
         raise NotImplementedError
     def ln( self ):
@@ -186,9 +197,8 @@ class DualGrad( DualNumpy ):
             if not self.e_.shape:
                 self.e_ = np.full( ( n, *self.x_.shape ), e )
 
+        # can't realign where e is a different size, so just assert
         assert ( n, *self.x_.shape ) == self.e_.shape, 'size mismatch'
-
-    # can't really realign where e is a different size, so just assert
     
     # binary ops
     def __add__( self, other ):
@@ -230,3 +240,9 @@ class DualGrad( DualNumpy ):
         return type(self)( abs( self.x_ ), np.where( self.x_ > 0, self.e_, -self.e_ ), self.n_ )
     def __invert__( self ):
         return DualGrad( self.x_, -self.e_, self.n_ )
+    def reciprocal( self ):
+        return type(self)( 1, 0, self.n_ ) / self
+    def tanh( self ):
+        real = np.tanh( self.x_ )
+        inft = ( 1 - real ** 2 ) * self.e_
+        return type(self)( real, inft, self.n_ )

@@ -20,14 +20,18 @@ def identityTest():
 def reluTest():
    testCase( Activation.Relu(), Dual( [ -1, 10 ], 1 ), [ 0, 10 ], [ 0, 1 ] )
 
-# TODO
-# def logisticTest():
-# def tanhTest():
+def logisticTest():
+   testCase( Activation.Logistic(), Dual( np.log( [ 0.1, 10 ] ), 1 ), [ 1/11, 1/1.1 ], [ 10/121, 0.1/1.21 ] )
+
+def tanhTest():
+   testCase( Activation.Tanh(), Dual( [ -1, 10 ], 1 ), np.tanh( [ -1, 10 ] ), 1 - np.tanh( [ -1, 10 ] ) ** 2 )
 
 suite = []
 
 suite.append( ( identityTest, "Identity Activation Test" ) )
 suite.append( ( reluTest, "RELU Activation Test" ) )
+suite.append( ( logisticTest, "Logistic Activation Test" ) )
+suite.append( ( tanhTest, "Tanh Activation Test" ))
 
 if __name__ == "__main__":
    runSuite( suite )
