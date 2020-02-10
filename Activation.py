@@ -1,3 +1,4 @@
+from DualNumber.DualArithmetic import DualNumber as Dual 
 import numpy as np
 
 class Activation( object ):
@@ -19,17 +20,23 @@ class Identity( object ):
       return value
 
    def df( self, value ):
-      raise 1
+      if isinstance( value, Dual ):
+         return np.full_like( value.x_, 1 )
+      return np.full_like( value, 1 )
 
 class Relu( object ):
    def __init__( self ):
       pass
 
    def f( self, value ):
-      return 0 if value < 0 else value
+      if isinstance( value, Dual ):
+         return value.where( value < 0, 0 )
+      return np.where( value < 0, 0, value )
 
    def df( self, value ):
-      return 0 if value < 0 else 1
+      if isinstance( value, Dual ):
+         return np.where( value < 0, 0, np.full_like( value.x_, 1 ) )
+      return np.where( value < 0, 0, np.full_like( value, 1 ) )
 
 class Logistic( object ):
    def __init__( self ):

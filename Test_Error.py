@@ -23,6 +23,9 @@ def huberTest():
    testCase( Error.Huber(), [ 1, 1 ], Dual( [ 0.9, 1.1 ], 1 ), [ 0.005, 0.005 ], [ -0.1, 0.1 ] )
 
 suite = []
+
 suite.append( ( mseTest, "Mean Square Error Test" ) )
 suite.append( ( huberTest, "Huber Error Test" ) )
-runSuite( suite )
+
+if __name__ == "__main__":
+   runSuite( suite )

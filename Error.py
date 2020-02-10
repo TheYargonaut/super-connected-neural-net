@@ -44,3 +44,6 @@ class Huber( Error ):
       if isinstance( full, DualNumber ):
          return full.where( high, self.delta_ ).where( low, -self.delta_ )
       return np.where( low, -self.delta_, np.where( high, self.delta_, full ) )
+
+# TODO: L1 (absolute loss)
+# TODO: Classification loss functions: cross-entropy, Kullback-Liebler, hinge
