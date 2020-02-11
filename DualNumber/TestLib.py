@@ -1,4 +1,8 @@
+import numpy as np
 import pdb
+
+def nearlyEqual( a, b ):
+   return np.all( abs( a - b ) < 1e-6 )
 
 def runTest( test, name=None ):
     if name is None:

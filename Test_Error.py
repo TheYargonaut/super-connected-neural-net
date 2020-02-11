@@ -1,11 +1,8 @@
-from DualNumber.TestLib import runSuite
+from DualNumber.TestLib import runSuite, nearlyEqual
 from DualNumber.DualArithmetic import DualGrad as Dual
 import Error
 
 import numpy as np
-
-def nearlyEqual( a, b ):
-   return np.all( abs( a - b ) < 1e-6 )
 
 def testCase( errorType, target, predicted, expectedError, expectedGrad ):
    result = errorType.f( target, predicted )
@@ -13,7 +10,6 @@ def testCase( errorType, target, predicted, expectedError, expectedGrad ):
    assert nearlyEqual( errorType.df( target, predicted ), expectedGrad )
    if isinstance( result, Dual ):
       assert nearlyEqual( result.e_, expectedGrad )
-
 
 def mseTest():
    testCase( Error.Mse(), [ 1, 1 ], Dual( [ 0, 2 ], 1 ), [ 1, 1 ], [ -2, 2 ] )

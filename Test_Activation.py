@@ -1,11 +1,8 @@
-from DualNumber.TestLib import runSuite
+from DualNumber.TestLib import runSuite, nearlyEqual
 from DualNumber.DualArithmetic import DualGrad as Dual
 import Activation
 
 import numpy as np
-
-def nearlyEqual( a, b ):
-   return np.all( abs( a - b ) < 1e-6 )
 
 def testCase( activation, x, expectedOut, expectedGrad ):
    result = activation.f( x )

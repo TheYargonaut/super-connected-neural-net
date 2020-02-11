@@ -1,3 +1,4 @@
+from DualNumber.DualArithmetic import DualNumber as Dual
 import numpy as np
 
 class Regularize( object ):
@@ -27,7 +28,9 @@ class L2( object ):
       self.dStrength_ = strength * 2
 
    def f( self, weight ):
+      if isinstance( weight, Dual ):
+         return ( weight ** 2 ) * self.strength_
       return self.strength_ * np.power( weight, 2 )
 
    def df( self, weight ):
-      return self.dStrength_ * weight
+      return weight * self.dStrength_
