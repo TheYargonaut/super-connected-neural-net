@@ -2,10 +2,11 @@ import Update, Error, Regularize, Activation, Initialize
 from DualNumber.DualArithmetic import DualGrad as Dual
 
 import numpy as np
+import pdb
 
 # Let more general 'training' class handle batches, iterations, early stopping, cooling update
 
-class LLS_Regressor( object ):
+class LlsRegressor( object ):
    '''Linear Least-Squares estimator using gradient descent with dual numbers'''
    _estimator_type = "regressor"
 
@@ -41,7 +42,7 @@ class LLS_Regressor( object ):
       self.initialize_()
    
    def initialize_( self ):
-      self.weight_ = self.iweight_( ( self.inputSize_, self.outputSize_ ), self.inputSize_ * self.outputSize_ )
+      self.weight_ = self.iweight_( ( self.inputSize_, self.outputSize_ ), self.nParameters_ )
 
    #def fit( self, X, y, verbose=True ):
    #   pass
@@ -49,14 +50,16 @@ class LLS_Regressor( object ):
    def partial_fit( self, X, Y, addBias=True ):
       '''X and Y should both be 2d numpy arrays'''
       error = self.error( X, Y )
-      grad = np.sum( error.e_, 1 ).reshape( self.weight_.x_.shape )
+      grad = np.average( error.e_, 1 ).reshape( self.weight_.x_.shape )
+      #pdb.set_trace()
       self.weight_ = self.update_( self.weight_, grad )
+      return np.average( error.x_ )
 
    def predict( self, X, addBias=True ):
       '''X should be 2d numpy array'''
       if addBias:
          X = np.append( X, np.ones( ( X.shape[ 0 ], 1 ) ), 1 )
-      return self.weight_.matmul( X )
+      return Dual( X, n=self.nParameters_ ).matmul( self.weight_ )
    
    def error( self, X, Y, addBias=True ):
       '''X and y should both be 2d numpy arrays'''

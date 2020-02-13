@@ -1,3 +1,5 @@
+from DualNumber.DualArithmetic import DualNumber as Dual
+
 import numpy as np
 import pdb
 
@@ -56,13 +58,12 @@ class Rprop( Update ):
 
    def step( self, weight, gradient ):
       if self.speed_ is None:
-         self.speed_ = np.ones_like( weight )
-         self.signs_ = np.zeros_like( weight )
+         self.speed_ = np.ones_like( gradient )
+         self.signs_ = np.zeros_like( gradient )
       tempSign = np.sign( gradient )
       # decrease where different, increase where similar
-      self.speed_ *= np.where( np.logical_and( np.equal( tempSign, self.signs_ ), 
-                                               np.not_equal( tempSign, np.zeros_like( tempSign ) ) ), 
-                               self.increase_, self.decrease_ )
+      accelerate = np.logical_and( tempSign == self.signs_, abs( gradient ) > 1e-16 )
+      self.speed_ *= np.where( accelerate, self.increase_, self.decrease_ )
       self.signs_ = tempSign
       return weight - self.speed_ * self.signs_
    
@@ -93,7 +94,7 @@ class Momentum( Update ):
 
    def step( self, weight, gradient ):
       if self.velocity_ is None:
-         self.velocity_ = np.zeros_like( weight )
+         self.velocity_ = np.zeros_like( gradient )
       self.velocity_ = ( self.velocity_ * self.momentum_ ) + ( gradient * self.learningRate_ )
       return weight + self.velocity_
    
@@ -125,7 +126,7 @@ class NesterovMomentum( Update ):
 
    def step( self, weight, gradient ):
       if self.velocity_ is None:
-         self.velocity_ = np.zeros_like( weight )
+         self.velocity_ = np.zeros_like( gradient )
       self.oldVelocity_ = self.velocity_
       self.velocity_ = ( self.velocity_ * self.momentum_ ) + ( gradient * self.learningRate_ )
       return weight - self.oldVelocity_ + ( 1 + self.momentum_ ) * self.velocity_
@@ -161,9 +162,9 @@ class RmsProp( Update ):
 
    def step( self, weight, gradient ):
       if self.meanSquare_ is None:
-         self.meanSquare_ = np.zeros_like( weight )
-         self.mean_ = np.zeros_like( weight )
-         self.velocity_ = np.zeros_like( weight )
+         self.meanSquare_ = np.zeros_like( gradient )
+         self.mean_ = np.zeros_like( gradient )
+         self.velocity_ = np.zeros_like( gradient )
       self.meanSquare_ = self.rho_ * self.meanSquare_ + ( 1 - self.rho_ ) * np.power( gradient, 2 )
       if self.centered_:
          self.mean_ = self.rho_ * self.mean_ + (1 - self.rho_) * gradient
@@ -211,8 +212,8 @@ class Adam( Update ):
 
    def step( self, weight, gradient ):
       if self.m_ is None:
-         self.m_ = np.zeros_like( weight )
-         self.v_ = np.zeros_like( weight )
+         self.m_ = np.zeros_like( gradient )
+         self.v_ = np.zeros_like( gradient )
       self.m_ = self.beta1_ * self.m_ + self.beta1c_ * gradient
       self.v_ = self.beta2_ * self.v_ + self.beta2c_ * gradient * gradient
       mHat = self.m_ / ( 1 - self.beta1pow_ )
