@@ -12,10 +12,15 @@ import pdb
 
 # Separate trainer and model?
 
-class SNN_Regressor( object ):
+# add bias term in predict
+
+# start with non-recurrent version
+
+class ScnnRegressor( object ):
    _estimator_type = "regressor"
 
-   def __init__( self, inputSize, outputSize, hiddenSize=100, maxIter=200, independent=True,
+   def __init__( self, inputSize, outputSize, hiddenSize=100,
+                 recurrent=False,
                  hiddenAct=Activation.Relu(),
                  outputAct=Activation.Identity(),
                  iweight=Initialize.he,
@@ -36,10 +41,9 @@ class SNN_Regressor( object ):
       self.outputActivationObj_ = outputAct
       self.outputActivation_ = self.outputActivationObj_.f
 
-      self.independent_ = independent
+      self.recurrent_ = recurrent
 
       # training settings
-      self.maxIter_ = maxIter
       self.iweight_ = iweight
       self.errorObj_ = error
       self.errorFunc_ = error.f
@@ -57,56 +61,16 @@ class SNN_Regressor( object ):
    
    def initialize_( self ):
       self.valueIn_ = Dual( np.zeros( self.valueInSize_ ), 0, self.nParameters_ )
-      self.valueIn_[ 0 ] = 1 # constant for input
-      self.weight_ =  self.iweight_()
-      self.dWeight_ = np.zeros_like( self.weight_.x_ )
+      self.weight_ = self.iweight_( ( self.valueInSize_, self.valueOutSize_ ), self.nParameters_)
       self.valueOut_ = Dual( np.zeros( self.valueOutSize_ ), 0, self.nParameters_ )
       self.output_ = Dual( np.zeros( self.outputSize_ ), 0, self.nParameters_ )
-      
-   def fit( self, X, y, batch=0, verbose=True ):
-      '''Perform training for maxIter rounds. Returns sequence of error per round.'''
-      self.reset()
-      errorTrace = [ None ]*self.maxIter_
-      for r in range( self.maxIter_ ):
-         errorTrace[ r ] = np.average( self.partial_fit( X, y, batch ) )
-         if verbose:
-            print( 'Round %d/%d Complete, Loss %4g' % ( r + 1, self.maxIter_, errorTrace[ r ] ) )
-      return errorTrace
    
-   def partial_fit( self, X, y, batch=0 ):
+   def partial_fit( self, X, Y ):
       '''Perform single round of training without reset. Returns average error.'''
-      if not batch:
-         batch = X.shape[ 0 ]
-
-      # ensure one sample per training round. Batch-average derivative
-      if len( X.shape ) == 2:
-         if len( y.shape ) == 1:
-            y = y[ :, None ]
-         errorSum = 0
-         derivativeSum = np.zeros_like( self.weight_ )
-         for n in range( X.shape[0] ):
-            self.predict( X[ n, : ] )
-            errorSum += self.errorFunc_( y[ n, : ], self.output_ )
-            self.derivative_( y[ n, : ] )
-            derivativeSum += self.dWeight_
-            # batching
-            if not ( ( n + 1 ) % batch ):
-               self.weight_ = self.update_( self.weight_, ( derivativeSum / batch ) + 
-                                                         self.dRegLoss_( self.weight_ ) )
-               derivativeSum = np.zeros_like( self.weight_ )
-         # deal with any odd ones out
-         remainder = X.shape[ 0 ] % batch
-         if remainder:
-            self.weight_ = self.update_( self.weight_, ( derivativeSum / remainder ) + 
-                                                      self.dRegLoss_( self.weight_ ) )
-         return errorSum / X.shape[ 0 ]
-
-      # only one sample given, do an update 
-      self.predict( X )
-      self.derivative_( y )
-      self.dWeight_ += self.dRegLoss_( self.weight_ )
-      self.weight_ = self.update_( self.weight_, self.dWeight_ )
-      return self.errorFunc_( y, self.output_ )
+      error = self.error( X, Y )
+      grad = np.average( error.e_, 1 ).reshape( self.weight_.x_.shape )
+      self.weight_ = self.update_( self.weight_, grad )
+      return np.average( error.x_ )
 
    def predict( self, X, elide=[] ):
       '''Perform forward pass.
@@ -116,24 +80,18 @@ class SNN_Regressor( object ):
       if not isinstance( elide, list ):
          elide = [ elide ]
 
-      # ensure one sample per prediction
-      if len( X.shape ) == 2:
-         yPred = np.zeros( ( X.shape[0], self.outputSize_ ) )
-         for n in range( X.shape[0] ):
-            yPred[ n, : ] = self.predict_( X[ n, : ], elide )
-         return yPred.reshape( -1 )
       return self.predict_( X, elide )
    
    def predict_( self, X, elide ):
       '''internal version, assumes and returns for single sample'''
       
       # enforce independence if specified
-      if self.independent_:
-         self.valueIn_ = np.zeros( self.valueInSize_ )
-         self.valueIn_[ 0 ] = 1
-      else:
+      if self.recurrent_:
          for h in elide:
             self.valueIn_[ h + self.inputSize_ ] = 0
+      else:
+         self.valueIn_ = np.zeros( self.valueInSize_ )
+         self.valueIn_[ 0 ] = 1
       # input
       self.valueIn_[ 1:self.inputSize_ ] = X
       np.copyto( self.oldValueIn_, self.valueIn_ )
@@ -148,15 +106,9 @@ class SNN_Regressor( object ):
       self.output_ = self.outputActivation_( self.valueOut_[ self.hiddenSize_:self.valueOutSize_ ] )
       return self.output_
 
-   def error( self, X, y, elide=[] ):
-      if not isinstance( elide, list ):
-         elide = [ elide ]
-      # ensure one sample per error
-      if len( X.shape ) == 2:
-         yPred = np.zeros( ( X.shape[0], self.outputSize_ ) )
-         for n in range( X.shape[0] ):
-            yPred[ n, : ] = self.predict_( X[ n, : ], elide )
-         return self.errorFunc_( yPred.reshape( -1 ), y.reshape( -1 ) )
+   def error( self, X, Y, elide=[] ):
+      '''X and y should both be 2d numpy arrays'''
+      return self.errorFunc_( Y, self.predict( X, elide ) )
 
    def addNode( self ):
       self.valueIn_ = np.insert( self.valueIn_, self.inputSize_, 0 )
