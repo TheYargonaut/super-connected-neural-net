@@ -62,3 +62,5 @@ class Tanh( object ):
 
    def df( self, value ):
       return -( self.f( value ) ** 2 ) + 1
+
+# TODO: Softmax, Exponential Linear Unit (ELU), leaky RELU

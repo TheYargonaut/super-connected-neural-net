@@ -22,7 +22,7 @@ class Zero( object ):
    def df( self, weight ):
       return 0
 
-class L2( object ):
+class Ridge( object ):
    def __init__( self, strength=1e-4 ):
       self.strength_ = strength
       self.dStrength_ = strength * 2
@@ -34,3 +34,7 @@ class L2( object ):
 
    def df( self, weight ):
       return weight * self.dStrength_
+
+# TODO
+#class Lasso
+#class ElasticNet

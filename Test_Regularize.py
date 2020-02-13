@@ -15,12 +15,12 @@ def zeroTest():
    testCase( Regularize.Zero(), Dual( [ -1, 10 ], 1 ), 0, 0 )
 
 def l2Test():
-   testCase( Regularize.L2( 0.1 ), Dual( [ -1, 10 ], 1 ), [ 0.1, 10 ], [ -0.2, 2 ] )
+   testCase( Regularize.Ridge( 0.1 ), Dual( [ -1, 10 ], 1 ), [ 0.1, 10 ], [ -0.2, 2 ] )
 
 suite = []
 
 suite.append( ( zeroTest, "Zero Regularization Test" ) )
-suite.append( ( l2Test, "L2 Regularization Test" ) )
+suite.append( ( l2Test, "Ridge Regularization Test" ) )
 
 if __name__ == "__main__":
    runSuite( suite )

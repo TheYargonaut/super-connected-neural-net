@@ -56,6 +56,9 @@ def dualTensorTest( DualType ):
     y = abs( c )
     assert np.all( y == [ 5, 10, 20 ] )
     assert np.all( y.e_ == [ 1, -1, 1 ] )
+    y = a.matmul( b )
+    assert np.all( y == [ 6, -8, 102 ] )
+    assert np.all( y.e_ == [ 14, 21, 28 ] )
 
 def dualGradientTest( DualType ):
     '''dual numbers for multiple independant variables'''
@@ -63,6 +66,10 @@ def dualGradientTest( DualType ):
     # declarations
     a = DualType( 5, 1, 4 )
     b = DualType( 4, [ 1, 2, 3, 4 ], 4 )
+    c = DualType( [ 1, 10, 5 ], [[ 1, 2, 3 ]]*4, 4 )
+    d = DualType( [ [ 1, 2, -3 ],
+                    [ 4, -5, 6 ],
+                    [ -7, 8, 9 ] ], 1, 4 )
 
     # comparisons
     assert np.all( a.x_ == 5 )
@@ -74,6 +81,9 @@ def dualGradientTest( DualType ):
     y = a * b
     assert np.all( y.x_ == 20 )
     assert np.all( y.e_ == [ 9, 14, 19, 24 ] )
+    y = c.matmul( d )
+    assert np.all( y == [ 6, -8, 102 ] )
+    assert np.all( y.e_ == [[ 4, 32, 52 ]]*4 )
 
 suite = []
 

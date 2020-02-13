@@ -1,5 +1,7 @@
 import numpy as np
 
+# TODO: Transpose, Matrix Multiplication (dot)
+
 class DualNumber( object ):
     '''General class for elevating to dual numbers
     operations attempt to return type of called object to make further elevations easy'''
@@ -165,9 +167,21 @@ class DualNumpy( DualNumber ):
     def __str__( self ):
         return "{} + ({})e".format( self.x_, self.e_ )
     
+    # Binary ops
+    def matmul( self, other ):
+        if isinstance( other, DualNumber ):
+            real = np.matmul( self.x_, other.x_ )
+            inft = np.matmul( self.x_, other.e_ ) + np.matmul( self.e_, other.x_ )
+            return type(self)( real, inft )
+        return type(self)( np.matmul( self.x_, other ), np.matmul( self.e_, other ) )
+    def dot( self, other ):
+        pass #TODO
+
     # Unary ops
     def __abs__( self ):
         return type(self)( abs( self.x_ ), np.where( self.x_ > 0, self.e_, -self.e_ ) )
+    def transpose( self ):
+        return type(self)( self.x_.transpose, self.e_.transpose )
     
     # utilities
     def where( self, condition, other ):
@@ -179,6 +193,8 @@ class DualNumpy( DualNumber ):
         real = np.where( condition, other, self.x_ )
         inft = np.where( condition, 0, self.e_ )
         return type(self)( real, inft )
+    def sum( self, axis ):
+        return type(self)( np.sum( self.x_, axis ), np.sum( self.e_, axis + 1 ) )
     def concatenate( self ):
         pass
 
@@ -229,6 +245,12 @@ class DualGrad( DualNumpy ):
         if isinstance( other, DualNumber ):
             raise NotImplementedError
         return DualGrad( self.x_ ** other, other * self.e_ * ( self.x_ ** (other - 1) ), self.n_ )
+    def matmul( self, other ):
+        if isinstance( other, DualNumber ):
+            real = np.matmul( self.x_, other.x_ )
+            inft = np.matmul( self.x_, other.e_ ) + np.matmul( self.e_, other.x_ )
+            return type(self)( real, inft, self.n_ )
+        return type(self)( np.matmul( self.x_, other ), np.matmul( self.e_, other ), self.n_ )
 
     # unary ops
     def __neg__( self ):
@@ -246,3 +268,9 @@ class DualGrad( DualNumpy ):
         real = np.tanh( self.x_ )
         inft = ( 1 - real ** 2 ) * self.e_
         return type(self)( real, inft, self.n_ )
+    def transpose( self ):
+        return type(self)( self.x_.transpose, self.e_.transpose, self.n_ )
+    
+    # utilities
+    def sum( self, axis ):
+        return type(self)( np.sum( self.x_, axis ), np.sum( self.e_, axis + 1 ), self.n_ )
