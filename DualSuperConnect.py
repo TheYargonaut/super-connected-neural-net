@@ -80,16 +80,18 @@ class ScnnRegressor( object ):
          X = np.append( np.ones( ( X.shape[ 0 ], 1 ) ), X, 1 )
 
       if self.recurrent_:
-         return self.predictIndependent_( X, elide )
-      return self.predictRecurrent_( X, elide )
+         return self.predictRecurrent_( X, elide )
+      return self.predictIndependent_( X, elide )
    
    def predictIndependent_( self, X, elide ):
+      self.valueOut_ = Dual( np.zeros( ( len( X ), self.valueOutSize_ ) ), 0, self.nParameters_ )
       if X.shape[ 1 ] < self.valueInSize_:
          X = np.append( X, np.zeros( ( X.shape[ 0 ], self.valueInSize_ - X.shape[ 1 ] ) ), 1 )
-      self.valueIn_ = X
+      self.valueIn_ = Dual( X, 0, self.nParameters_ )
       for n in range( self.valueOutSize_ ):
          self.valueOut_[ :, n ] = self.valueIn_.matmul( self.weight_[ :, n ] )
-         self.valueIn_[ :, self.inputSize_ + n ] = self.hiddenActivation_( self.valueOut_[ :, n ] )
+         if n < self.hiddenSize_:
+            self.valueIn_[ :, self.inputSize_ + n ] = self.hiddenActivation_( self.valueOut_[ :, n ] )
       return self.outputActivation_( self.valueOut_[ :, self.hiddenSize_: ] )
 
    def predictRecurrent_( self, X, elide ):
@@ -99,7 +101,7 @@ class ScnnRegressor( object ):
          self.valueIn_[ 0 ] = 1
          self.valueOut_ = Dual( np.zeros( self.valueOutSize_ ), 0, self.nParameters_ )
       for s in range( len( X ) ):
-         self.valueIn_[ 1:self.inputSize_ ] = X[ s ]
+         self.valueIn_[ :self.inputSize_ ] = X[ s ]
          for n in range( self.valueOutSize_ ):
             self.valueOut_[ n ] = self.valueIn_.matmul( self.weight_[ :, n ] )
             self.valueIn_[ self.inputSize_ + n ] = self.hiddenActivation_( self.valueOut_[ n ] )

@@ -2,6 +2,8 @@ import numpy as np
 
 # Model Utilites
 
+# abstraction to interface with sklearn as regressor or classifier
+
 def formatTarget( y, expectWidth=None ):
    '''make sure y is a 2-d numpy array
    if expectLen is provided, use to check appropriate size'''

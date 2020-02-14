@@ -56,8 +56,6 @@ class DualNumber( object ):
             raise NotImplementedError
         inft = other * self.e_ * ( self.x_ ** (other - 1) )
         return type(self)( self.x_ ** other, inft )
-    def __getitem__( self, *args ):
-        pass
 
     # in-place assignment operators
     def __iadd__( self, other ):
@@ -181,9 +179,9 @@ class DualNumpy( DualNumber ):
     
     # Binary ops
     def matmul( self, other ):
-        if isinstance( other, DualNumber ):
+        if isinstance( other, DualNumpy ):
             real = np.matmul( self.x_, other.x_ )
-            inft = np.matmul( self.x_, other.e_ ) + np.matmul( self.e_, other.x_ )
+            inft = np.matmul( other.e_, self.x_.transpose() ) + np.matmul( self.e_, other.x_ )
             return type(self)( real, inft )
         return type(self)( np.matmul( self.x_, other ), np.matmul( self.e_, other ) )
     def dot( self, other ):
@@ -196,6 +194,17 @@ class DualNumpy( DualNumber ):
         return type(self)( self.x_.transpose, self.e_.transpose )
     
     # utilities
+    def __getitem__( self, key ):
+        ret = type(self)( 0, 0 )
+        ret.x_ = self.x_[ key ]
+        ret.e_ = self.e_[ key ]
+        return ret
+    def __setitem__( self, key, value ):
+        if isinstance( value, DualNumpy ):
+            self.x_[ key ] = value.x_
+            self.e_[ key ] = value.e_
+        self.x_[ key ] = value
+        self.e_[ key ] = np.zeros_like( self.e_[ key ] )
     def where( self, condition, other ):
         '''where condition is true, substitute from other into self for return '''
         if isinstance( other, DualNumber ):
@@ -262,7 +271,7 @@ class DualGrad( DualNumpy ):
     def matmul( self, other ):
         if isinstance( other, DualNumber ):
             real = np.matmul( self.x_, other.x_ )
-            inft = np.matmul( self.x_, other.e_ ) + np.matmul( self.e_, other.x_ )
+            inft = np.matmul( other.e_, self.x_.transpose() ) + np.matmul( self.e_, other.x_ )
             return type(self)( real, inft, self.n_ )
         return type(self)( np.matmul( self.x_, other ), np.matmul( self.e_, other ), self.n_ )
 
@@ -284,5 +293,27 @@ class DualGrad( DualNumpy ):
         return type(self)( self.x_.transpose, self.e_.transpose, self.n_ )
     
     # utilities
+    def __getitem__( self, key ):
+        ret = type(self)( 0, 0, self.n_ )
+        ret.x_ = self.x_[ key ]
+        ret.e_ = self.e_[ ( slice(None), *key ) ]
+        return ret
+    def __setitem__( self, key, value ):
+        eKey = ( slice(None), *key )
+        if isinstance( value, DualGrad ):
+            self.x_[ key ] = value.x_
+            self.e_[ eKey ] = value.e_
+            return
+        self.x_[ key ] = value
+        self.e_[ eKey ] = np.zeros_like( self.e_[ eKey ] )
     def sum( self, axis ):
         return type(self)( np.sum( self.x_, axis ), np.sum( self.e_, axis + 1 ), self.n_ )
+    def where( self, condition, other ):
+        '''where condition is true, substitute from other into self for return '''
+        if isinstance( other, DualNumber ):
+            real = np.where( condition, other.x_, self.x_ )
+            inft = np.where( condition, other.e_, self.e_ )
+            return type(self)( real, inft, self.n_ )
+        real = np.where( condition, other, self.x_ )
+        inft = np.where( condition, 0, self.e_ )
+        return type(self)( real, inft, self.n_ )
