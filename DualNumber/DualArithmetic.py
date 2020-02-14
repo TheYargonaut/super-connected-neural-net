@@ -21,29 +21,43 @@ class DualNumber( object ):
             inft = self.e_ + other.e_
             return type(self)( real, inft )
         return type(self)( self.x_ + other, self.e_ )
+    def __radd__( self, other ):
+        return self + other
     def __sub__( self, other ):
         if isinstance( other, DualNumber ):
             real = self.x_ - other.x_
             inft = self.e_ - other.e_
             return type(self)( real, inft )
         return type(self)( self.x_ - other, self.e_ )
+    def __rsub__( self, other ):
+        if isinstance( other, DualNumber ):
+            real = other.x_ - self.x_
+            inft = other.e_ - self.e_
+            return type(self)( real, inft )
+        return type(self)( other - self.x_, -self.e_ )
     def __mul__( self, other ):
         if isinstance( other, DualNumber ):
             real = self.x_ * other.x_
             inft = self.x_ * other.e_ + self.e_ * other.x_
             return type(self)( real, inft )
         return type(self)( self.x_ * other, self.e_ * other )
+    def __rmul__( self, other ):
+        return self * other
     def __truediv__( self, other ):
         if isinstance( other, DualNumber ):
             real =  self.x_ / other.x_
             inft = ( self.e_ * other.x_ - self.x_ * other.e_ ) / ( other.x_ ** 2 )
             return type(self)( real, inft )
         return type(self)( self.x_ / other, self.e_ / other )
+    def __rtruediv__( self, other ):
+        return type(self)( other ) / self
     def __pow__( self, other ):
         if isinstance( other, DualNumber ):
             raise NotImplementedError
         inft = other * self.e_ * ( self.x_ ** (other - 1) )
         return type(self)( self.x_ ** other, inft )
+    def __getitem__( self, *args ):
+        pass
 
     # in-place assignment operators
     def __iadd__( self, other ):
@@ -99,8 +113,6 @@ class DualNumber( object ):
     def exp( self ):
         real = np.exp( self.x_ )
         return type(self)( real, real * self.e_ )
-    def reciprocal( self ):
-        return type(self)( 1 ) / self
     def sin( self ):
         raise NotImplementedError
     def cos( self ):
@@ -241,6 +253,8 @@ class DualGrad( DualNumpy ):
             inft = ( self.e_ * other.x_ - self.x_ * other.e_ ) / ( other.x_ ** 2 )
             return DualGrad( real, inft, self.n_ )
         return DualGrad( self.x_ / other, self.e_ / other, self.n_ )
+    def __rtruediv__( self, other ):
+        return type(self)( other, 0, self.n_ ) / self
     def __pow__( self, other ):
         if isinstance( other, DualNumber ):
             raise NotImplementedError
@@ -262,8 +276,6 @@ class DualGrad( DualNumpy ):
         return type(self)( abs( self.x_ ), np.where( self.x_ > 0, self.e_, -self.e_ ), self.n_ )
     def __invert__( self ):
         return DualGrad( self.x_, -self.e_, self.n_ )
-    def reciprocal( self ):
-        return type(self)( 1, 0, self.n_ ) / self
     def tanh( self ):
         real = np.tanh( self.x_ )
         inft = ( 1 - real ** 2 ) * self.e_

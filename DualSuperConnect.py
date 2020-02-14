@@ -12,9 +12,7 @@ import pdb
 
 # Separate trainer and model?
 
-# add bias term in predict
-
-# start with non-recurrent version
+# TODO: Elision
 
 class ScnnRegressor( object ):
    _estimator_type = "regressor"
@@ -60,10 +58,9 @@ class ScnnRegressor( object ):
       self.initialize_()
    
    def initialize_( self ):
-      self.valueIn_ = Dual( np.zeros( self.valueInSize_ ), 0, self.nParameters_ )
+      self.valueIn_ = None
       self.weight_ = self.iweight_( ( self.valueInSize_, self.valueOutSize_ ), self.nParameters_)
-      self.valueOut_ = Dual( np.zeros( self.valueOutSize_ ), 0, self.nParameters_ )
-      self.output_ = Dual( np.zeros( self.outputSize_ ), 0, self.nParameters_ )
+      self.valueOut_ = None
    
    def partial_fit( self, X, Y ):
       '''Perform single round of training without reset. Returns average error.'''
@@ -79,32 +76,59 @@ class ScnnRegressor( object ):
 
       if not isinstance( elide, list ):
          elide = [ elide ]
+      if X.shape[ 1 ] == self.inputSize_ - 1:
+         X = np.append( np.ones( ( X.shape[ 0 ], 1 ) ), X, 1 )
 
-      return self.predict_( X, elide )
-   
-   def predict_( self, X, elide ):
-      '''internal version, assumes and returns for single sample'''
-      
-      # enforce independence if specified
       if self.recurrent_:
-         for h in elide:
-            self.valueIn_[ h + self.inputSize_ ] = 0
-      else:
-         self.valueIn_ = np.zeros( self.valueInSize_ )
+         return self.predictIndependent_( X, elide )
+      return self.predictRecurrent_( X, elide )
+   
+   def predictIndependent_( self, X, elide ):
+      if X.shape[ 1 ] < self.valueInSize_:
+         X = np.append( X, np.zeros( ( X.shape[ 0 ], self.valueInSize_ - X.shape[ 1 ] ) ), 1 )
+      self.valueIn_ = X
+      for n in range( self.valueOutSize_ ):
+         self.valueOut_[ :, n ] = self.valueIn_.matmul( self.weight_[ :, n ] )
+         self.valueIn_[ :, self.inputSize_ + n ] = self.hiddenActivation_( self.valueOut_[ :, n ] )
+      return self.outputActivation_( self.valueOut_[ :, self.hiddenSize_: ] )
+
+   def predictRecurrent_( self, X, elide ):
+      pred = np.zeros( ( len( X ), self.outputSize_ ) )
+      if not self.valueIn_:
+         self.valueIn_ = Dual( np.zeros( self.valueInSize_ ), 0, self.nParameters_ )
          self.valueIn_[ 0 ] = 1
-      # input
-      self.valueIn_[ 1:self.inputSize_ ] = X
-      np.copyto( self.oldValueIn_, self.valueIn_ )
-      # hidden nodes
-      for n in range( self.hiddenSize_ ):
-         if n not in elide:
-            self.valueOut_[ n ] = np.dot( self.valueIn_, self.weight_[ n, : ] )
-            self.valueIn_[ n + self.inputSize_ ] = self.hiddenActivation_( self.valueOut_[ n ] )
-      # output nodes
-      self.valueOut_[ self.hiddenSize_:self.valueOutSize_ ] = np.matmul(
-         self.weight_[ self.hiddenSize_:self.valueOutSize_, : ], self.valueIn_ )
-      self.output_ = self.outputActivation_( self.valueOut_[ self.hiddenSize_:self.valueOutSize_ ] )
-      return self.output_
+         self.valueOut_ = Dual( np.zeros( self.valueOutSize_ ), 0, self.nParameters_ )
+      for s in range( len( X ) ):
+         self.valueIn_[ 1:self.inputSize_ ] = X[ s ]
+         for n in range( self.valueOutSize_ ):
+            self.valueOut_[ n ] = self.valueIn_.matmul( self.weight_[ :, n ] )
+            self.valueIn_[ self.inputSize_ + n ] = self.hiddenActivation_( self.valueOut_[ n ] )
+         pred[ s ] = self.outputActivation_( self.valueOut_[ self.hiddenSize_: ] )
+      return pred
+   
+   # def predict_( self, X, elide ):
+   #    '''internal version, assumes and returns for single sample'''
+      
+   #    # enforce independence if specified
+   #    if self.recurrent_:
+   #       for h in elide:
+   #          self.valueIn_[ h + self.inputSize_ ] = 0
+   #    else:
+   #       self.valueIn_ = np.zeros( self.valueInSize_ )
+   #       self.valueIn_[ 0 ] = 1
+   #    # input
+   #    self.valueIn_[ 1:self.inputSize_ ] = X
+   #    np.copyto( self.oldValueIn_, self.valueIn_ )
+   #    # hidden nodes
+   #    for n in range( self.hiddenSize_ ):
+   #       if n not in elide:
+   #          self.valueOut_[ n ] = np.dot( self.valueIn_, self.weight_[ n, : ] )
+   #          self.valueIn_[ n + self.inputSize_ ] = self.hiddenActivation_( self.valueOut_[ n ] )
+   #    # output nodes
+   #    self.valueOut_[ self.hiddenSize_:self.valueOutSize_ ] = np.matmul(
+   #       self.weight_[ self.hiddenSize_:self.valueOutSize_, : ], self.valueIn_ )
+   #    self.output_ = self.outputActivation_( self.valueOut_[ self.hiddenSize_:self.valueOutSize_ ] )
+   #    return self.output_
 
    def error( self, X, Y, elide=[] ):
       '''X and y should both be 2d numpy arrays'''

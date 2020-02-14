@@ -44,12 +44,12 @@ class Logistic( object ):
 
    def f( self, value ):
       if isinstance( value, Dual ):
-         return ( ( -value ).exp() + 1 ).reciprocal()
+         return 1 / ( 1 + ( -value ).exp() )
       return 1 / ( 1 + np.exp( -value ) )
 
    def df( self, value ):
       lf = self.f( value )
-      return lf * ( -lf + 1 )
+      return lf * ( 1 - lf )
 
 class Tanh( object ):
    def __init__( self ):
@@ -61,6 +61,6 @@ class Tanh( object ):
       return np.tanh( value )
 
    def df( self, value ):
-      return -( self.f( value ) ** 2 ) + 1
+      return 1 - self.f( value ) ** 2
 
 # TODO: Softmax, Exponential Linear Unit (ELU), leaky RELU

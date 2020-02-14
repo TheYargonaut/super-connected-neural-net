@@ -4,7 +4,7 @@ from DualNumber.DualArithmetic import DualGrad as Dual
 import numpy as np
 import pdb
 
-# Let more general 'training' class handle batches, iterations, early stopping, cooling update
+# TODO: Let more general 'training' class handle batches, iterations, early stopping, cooling update
 
 class LlsRegressor( object ):
    '''Linear Least-Squares estimator using gradient descent with dual numbers'''
@@ -55,7 +55,8 @@ class LlsRegressor( object ):
       '''X should be 2d numpy array'''
       if X.shape[ 1 ] == self.inputSize_ - 1:
          X = np.append( np.ones( ( X.shape[ 0 ], 1 ) ), X, 1 )
-      return Dual( X, n=self.nParameters_ ).matmul( self.weight_ )
+      raw = Dual( X, n=self.nParameters_ ).matmul( self.weight_ )
+      return self.outputActivation_( raw )
    
    def error( self, X, Y ):
       '''X and y should both be 2d numpy arrays'''

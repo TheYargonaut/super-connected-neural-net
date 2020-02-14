@@ -28,6 +28,12 @@ def dualScalarTest( DualType ):
     assert y.e_ == -1
     y = a.where( b < 1, b )
     assert y == b
+    y = 1 + a
+    assert y == 11
+    y = 3 * b
+    assert y == -3
+    y = 1 / c
+    assert y == -1
 
 def dualTensorTest( DualType ):
     '''dual numbers optimized for tensors'''
