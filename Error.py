@@ -13,6 +13,20 @@ class Error( object ):
    def df( self, target, predicted ):
       raise NotImplementedError()
 
+class Mae( Error ):
+   '''Mean absolute error'''
+   def __init__( self ):
+      pass
+
+   def f( self, target, predicted ):
+      return abs( predicted - target )
+
+   def df( self, target, predicted ):
+      diff = predicted - target
+      if isinstance( predicted, diff ):
+         return np.sign( diff.x_ )
+      return np.sign( predicted - target )
+
 class Mse( Error ):
    def __init__( self ):
       pass
@@ -45,5 +59,4 @@ class Huber( Error ):
          return full.where( high, self.delta_ ).where( low, -self.delta_ )
       return np.where( low, -self.delta_, np.where( high, self.delta_, full ) )
 
-# TODO: L1 (absolute loss)
 # TODO: Classification loss functions: cross-entropy, Kullback-Liebler, hinge

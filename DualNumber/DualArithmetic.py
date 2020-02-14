@@ -1,7 +1,5 @@
 import numpy as np
 
-# TODO: Transpose, Matrix Multiplication (dot)
-
 class DualNumber( object ):
     '''General class for elevating to dual numbers
     operations attempt to return type of called object to make further elevations easy'''
@@ -184,8 +182,6 @@ class DualNumpy( DualNumber ):
             inft = np.matmul( other.e_, self.x_.transpose() ) + np.matmul( self.e_, other.x_ )
             return type(self)( real, inft )
         return type(self)( np.matmul( self.x_, other ), np.matmul( self.e_, other ) )
-    def dot( self, other ):
-        pass #TODO
 
     # Unary ops
     def __abs__( self ):
@@ -215,7 +211,7 @@ class DualNumpy( DualNumber ):
         inft = np.where( condition, 0, self.e_ )
         return type(self)( real, inft )
     def sum( self, axis ):
-        return type(self)( np.sum( self.x_, axis ), np.sum( self.e_, axis + 1 ) )
+        return type(self)( np.sum( self.x_, axis ), np.sum( self.e_, axis ) )
     def concatenate( self ):
         pass
 
@@ -285,6 +281,9 @@ class DualGrad( DualNumpy ):
         return type(self)( abs( self.x_ ), np.where( self.x_ > 0, self.e_, -self.e_ ), self.n_ )
     def __invert__( self ):
         return DualGrad( self.x_, -self.e_, self.n_ )
+    def exp( self ):
+        real = np.exp( self.x_ )
+        return type(self)( real, real * self.e_, self.n_ )
     def tanh( self ):
         real = np.tanh( self.x_ )
         inft = ( 1 - real ** 2 ) * self.e_
@@ -307,7 +306,8 @@ class DualGrad( DualNumpy ):
         self.x_[ key ] = value
         self.e_[ eKey ] = np.zeros_like( self.e_[ eKey ] )
     def sum( self, axis ):
-        return type(self)( np.sum( self.x_, axis ), np.sum( self.e_, axis + 1 ), self.n_ )
+        eAxis = axis if axis < 0 else axis + 1
+        return type(self)( np.sum( self.x_, axis ), np.sum( self.e_, eAxis ), self.n_ )
     def where( self, condition, other ):
         '''where condition is true, substitute from other into self for return '''
         if isinstance( other, DualNumber ):
