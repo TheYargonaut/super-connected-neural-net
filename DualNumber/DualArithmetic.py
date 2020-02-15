@@ -176,10 +176,10 @@ class DualNumpy( DualNumber ):
     # Binary ops
     def matmul( self, other ):
         if isinstance( other, DualNumpy ):
-            real = np.matmul( self.x_, other.x_ )
-            inft = np.matmul( other.e_, self.x_.transpose() ) + np.matmul( self.e_, other.x_ )
+            real = np.dot( self.x_, other.x_ )
+            inft = np.dot( other.e_, self.x_.transpose() ) + np.dot( self.e_, other.x_ )
             return type(self)( real, inft )
-        return type(self)( np.matmul( self.x_, other ), np.matmul( self.e_, other ) )
+        return type(self)( np.dot( self.x_, other ), np.dot( self.e_, other ) )
 
     # Unary ops
     def __abs__( self ):
@@ -264,10 +264,15 @@ class DualGrad( DualNumpy ):
         return DualGrad( self.x_ ** other, other * self.e_ * ( self.x_ ** (other - 1) ), self.n_ )
     def matmul( self, other ):
         if isinstance( other, DualNumber ):
-            real = np.matmul( self.x_, other.x_ )
-            inft = np.matmul( other.e_, self.x_.transpose() ) + np.matmul( self.e_, other.x_ )
+            real = np.dot( self.x_, other.x_ )
+            tp = list( range( len( other.e_.shape ) ) )
+            tp[ 0 ] = 1
+            tp[ 1 ] = 0
+            re = np.dot( self.x_, other.e_.transpose( tp ) ).transpose( tp )
+            er = np.dot( self.e_, other.x_ )
+            inft = re + er
             return type(self)( real, inft, self.n_ )
-        return type(self)( np.matmul( self.x_, other ), np.matmul( self.e_, other ), self.n_ )
+        return type(self)( np.dot( self.x_, other ), np.dot( self.e_, other ), self.n_ )
 
     # unary ops
     def __neg__( self ):
