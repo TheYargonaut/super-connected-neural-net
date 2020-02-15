@@ -12,8 +12,8 @@ import Update
 def test():
    # data
    cal_housing = fetch_california_housing()
-   X = cal_housing.data
-   Y = np.reshape( cal_housing.target, ( -1, 1 ) )
+   X = cal_housing[ 'data' ]
+   Y = np.reshape( cal_housing[ 'target' ], ( -1, 1 ) )
 
    # train models
    iters = 100
