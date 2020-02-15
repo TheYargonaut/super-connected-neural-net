@@ -18,6 +18,10 @@ def formatTarget( y, expectWidth=None ):
    assert len( y.shape ) == 2   
    return y
 
-class Regressor( object ):
-   '''abstract class for regressors'''
+class SkRegressor( object ):
+   '''wrapper class to spoof scikit-learn regressors'''
    _estimator_type = "regressor"
+
+class SkClassifier( object ):
+   '''wrapper class to spoof scikit-learn classifiers'''
+   _estimator_type = "classifier"

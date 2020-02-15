@@ -93,8 +93,6 @@ class DualNumber( object ):
         raise NotImplementedError
     def ilog( self, base ):
         raise NotImplementedError
-    def iln( self ):
-        raise NotImplementedError
 
     # unary ops
     def __neg__( self ):
@@ -117,12 +115,12 @@ class DualNumber( object ):
         raise NotImplementedError
     def tanh( self ):
         real = np.tanh( self.x_ )
-        inft = ( 1 - real ** 2 ) * self.e_
+        inft = self.e_ * ( 1 - real ** 2 )
         return type(self)( real, inft )
-    def log( self, base ):
-        raise NotImplementedError
-    def ln( self ):
-        raise NotImplementedError
+    def log( self ):
+        real = np.log( self.x_ )
+        inft = self.e_ / self.x_
+        return type(self)( real, inft )
 
     # comparison ops; equivalent to comparing just real type
     def __lt__( self, other ):
@@ -287,6 +285,10 @@ class DualGrad( DualNumpy ):
     def tanh( self ):
         real = np.tanh( self.x_ )
         inft = ( 1 - real ** 2 ) * self.e_
+        return type(self)( real, inft, self.n_ )
+    def log( self ):
+        real = np.log( self.x_ )
+        inft = self.e_ / self.x_
         return type(self)( real, inft, self.n_ )
     def transpose( self ):
         return type(self)( self.x_.transpose, self.e_.transpose, self.n_ )

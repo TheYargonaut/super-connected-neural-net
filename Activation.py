@@ -1,5 +1,6 @@
-from DualNumber.DualArithmetic import DualNumber as Dual 
+from DualNumber.DualArithmetic import DualNumber as Dual, DualNumpy
 import numpy as np
+import pdb
 
 class Activation( object ):
    def __init__( self ):
@@ -24,6 +25,22 @@ class Identity( object ):
          return np.full_like( value.x_, 1 )
       return np.full_like( value, 1 )
 
+class Softplus( object ):
+   '''smooth approximation of rectifier'''
+
+   def __init__( self ):
+      pass
+
+   def f( self, value ):
+      if isinstance( value, Dual ):
+         return ( 1 + value.exp() ).log()
+      return np.log( 1 + np.exp( value ) )
+   
+   def df( self, value ):
+      if isinstance( value, Dual ):
+         return 1 / ( 1 + ( -value ).exp() )
+      return 1 / ( 1 + np.exp( -value ) )
+
 class Relu( object ):
    def __init__( self ):
       pass
@@ -35,8 +52,8 @@ class Relu( object ):
 
    def df( self, value ):
       if isinstance( value, Dual ):
-         return np.where( value < 0, 0, np.full_like( value.x_, 1 ) )
-      return np.where( value < 0, 0, np.full_like( value, 1 ) )
+         return np.where( value < 0, 0, np.ones_like( value.x_ ) )
+      return np.where( value < 0, 0, np.ones_like( value ) )
 
 class LeakyRelu( object ):
    def __init__( self, p=0.01 ):
@@ -50,8 +67,8 @@ class LeakyRelu( object ):
 
    def df( self, value ):
       if isinstance( value, Dual ):
-         return np.where( value < 0, 0, np.full_like( value.x_, self.p_ ) )
-      return np.where( value < 0, 0, np.full_like( value, self.p_ ) )
+         return np.where( value < 0, np.full_like( value.x_, self.p_, dtype=float ), np.ones_like( value.x_ ) )
+      return np.where( value < 0, np.full_like( value, self.p_, dtype=float ), np.ones_like( value ) )
 
 class Elu( object ):
    def __init__( self ):
@@ -63,6 +80,11 @@ class Elu( object ):
          return value.where( value < 0, low )
       low = np.exp( value ) - 1
       return np.where( value < 0, low, value )
+   
+   def df( self, value ):
+      if isinstance( value, Dual ):
+         return np.where( value < 0, np.exp( value.x_ ) , np.ones_like( value.x_ ) )
+      return np.where( value < 0, np.exp( value ), np.ones_like( value ) )
 
 class Logistic( object ):
    def __init__( self ):
@@ -95,10 +117,13 @@ class Softmax( object ):
 
    def f( self, value ):
       if isinstance( value, Dual ):
-         raw = value.exp() / self.t_
+         raw = ( value / self.t_ ).exp()
          return raw / raw.sum( -1 )
-      raw = np.exp( value ) / self.t_
+      raw = np.exp( value / self.t_ )
       return raw / np.sum( raw, -1 )
 
    def df( self, value ):
-      raise NotImplementedError
+      if not isinstance( value, DualNumpy ):
+         value = DualNumpy( value, 1 )
+      return self.f( value ).e_
+      

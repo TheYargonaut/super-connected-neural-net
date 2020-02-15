@@ -1,4 +1,4 @@
-from DualNumber.DualArithmetic import DualNumber
+from DualNumber.DualArithmetic import DualNumber as Dual, DualNumpy
 
 import numpy as np
 
@@ -23,7 +23,7 @@ class Mae( Error ):
 
    def df( self, target, predicted ):
       diff = predicted - target
-      if isinstance( predicted, diff ):
+      if isinstance( diff, Dual ):
          return np.sign( diff.x_ )
       return np.sign( predicted - target )
 
@@ -47,7 +47,7 @@ class Huber( Error ):
       full = ( diff ** 2 ) * 0.5
       limited = ( diff - 0.5 * self.delta_ ) * self.delta_
       condition = diff > self.delta_
-      if isinstance( diff, DualNumber ):
+      if isinstance( diff, Dual ):
          return full.where( condition, limited )
       return np.where( condition, limited, full )
 
@@ -55,8 +55,68 @@ class Huber( Error ):
       full = predicted - target
       high = full > self.delta_
       low = full < -self.delta_
-      if isinstance( full, DualNumber ):
+      if isinstance( full, Dual ):
          return full.where( high, self.delta_ ).where( low, -self.delta_ )
       return np.where( low, -self.delta_, np.where( high, self.delta_, full ) )
 
-# TODO: Classification loss functions: cross-entropy, Kullback-Liebler, hinge
+class Hinge( Error ):
+   def __init__( self ):
+      pass
+
+   def f( self, target, predicted ):
+      t = np.sign( target )
+      loss = 1 - predicted * t
+      if isinstance( loss, Dual ):
+         return loss.where( loss < 0, np.zeros_like( loss.x_ )  )
+      return np.where( loss > 0, loss, np.zeros_like( loss ) )
+
+   def df( self, target, predicted ):
+      t = np.sign( target )
+      loss = 1 - predicted * t
+      if isinstance( loss, Dual ):
+         loss = loss.x_
+      return np.where( loss > 0, np.ones_like( loss ), np.zeros_like( loss ) )
+
+class CrossEntropy( Error ):
+   def __init__( self ):
+      pass
+
+   def f( self, target, predicted ):
+      if isinstance( predicted, Dual ):
+         return - ( target * predicted.log() )
+      return -( target * np.log( predicted ) )
+
+   def df( self, target, predicted ):
+      return -( target / predicted )
+
+class KlDivergence( Error ):
+   '''Kullback-Liebler'''
+   def __init__( self ):
+      pass
+
+   def f( self, target, predicted ):
+      if isinstance( predicted, Dual ):
+         return target * ( target / predicted ).log()
+      return target * np.log( target / predicted )
+
+   def df( self, target, predicted ):
+      return -( target / predicted )
+
+class JsDivergence( Error ):
+   '''Jensen-Shannon'''
+   def __init__( self ):
+      pass
+
+   def f( self, target, predicted ):
+      m = ( target + predicted ) / 2
+      if isinstance( m, Dual ):
+         return ( target * ( target / m ).log() + predicted * ( predicted / m ).log() ) / 2
+      return ( target * np.log( target / m ) + predicted * np.log( predicted / m ) ) / 2
+
+   def df( self, target, predicted ):
+      if not isinstance( predicted, Dual ):
+         predicted = DualNumpy( predicted, 1 )
+      return self.f( target, predicted ).e_
+
+
+# TODO: Classification loss functions: Multinomial hinge (max, sum)
