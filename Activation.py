@@ -22,8 +22,8 @@ class Identity( object ):
 
    def df( self, value ):
       if isinstance( value, Dual ):
-         return np.full_like( value.x_, 1 )
-      return np.full_like( value, 1 )
+         return np.ones_like( value.x_ )
+      return np.ones_like( value )
 
 class Softplus( object ):
    '''smooth approximation of rectifier'''
@@ -52,8 +52,8 @@ class Relu( object ):
 
    def df( self, value ):
       if isinstance( value, Dual ):
-         return np.where( value < 0, 0, np.ones_like( value.x_ ) )
-      return np.where( value < 0, 0, np.ones_like( value ) )
+         return np.where( value < 0, 0, 1 )
+      return np.where( value < 0, 0, 1 )
 
 class LeakyRelu( object ):
    def __init__( self, p=0.01 ):
@@ -67,8 +67,8 @@ class LeakyRelu( object ):
 
    def df( self, value ):
       if isinstance( value, Dual ):
-         return np.where( value < 0, np.full_like( value.x_, self.p_, dtype=float ), np.ones_like( value.x_ ) )
-      return np.where( value < 0, np.full_like( value, self.p_, dtype=float ), np.ones_like( value ) )
+         return np.where( value < 0, self.p_, 1 )
+      return np.where( value < 0, self.p_, 1 )
 
 class Elu( object ):
    def __init__( self ):
@@ -83,8 +83,8 @@ class Elu( object ):
    
    def df( self, value ):
       if isinstance( value, Dual ):
-         return np.where( value < 0, np.exp( value.x_ ) , np.ones_like( value.x_ ) )
-      return np.where( value < 0, np.exp( value ), np.ones_like( value ) )
+         return np.where( value < 0, np.exp( value.x_ ) , 1 )
+      return np.where( value < 0, np.exp( value ), 1 )
 
 class Logistic( object ):
    def __init__( self ):

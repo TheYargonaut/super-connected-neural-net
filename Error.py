@@ -67,15 +67,15 @@ class Hinge( Error ):
       t = np.sign( target )
       loss = 1 - predicted * t
       if isinstance( loss, Dual ):
-         return loss.where( loss < 0, np.zeros_like( loss.x_ )  )
-      return np.where( loss > 0, loss, np.zeros_like( loss ) )
+         return loss.where( loss < 0, 0 )
+      return np.where( loss > 0, loss, 0 )
 
    def df( self, target, predicted ):
       t = np.sign( target )
       loss = 1 - predicted * t
       if isinstance( loss, Dual ):
          loss = loss.x_
-      return np.where( loss > 0, np.ones_like( loss ), np.zeros_like( loss ) )
+      return np.where( loss > 0, 1, 0 )
 
 class CrossEntropy( Error ):
    def __init__( self ):

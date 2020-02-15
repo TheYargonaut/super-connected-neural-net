@@ -62,7 +62,7 @@ if __name__ == "__main__":
       maxIter=1000,
       independent=True,
       error=Error.Mse(), 
-      regularization=Regularize.L2(),
+      regularization=Regularize.Ridge(),
       hiddenAct=Activation.Tanh()
    )
 
