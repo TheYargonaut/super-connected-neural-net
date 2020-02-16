@@ -1,5 +1,5 @@
 import numpy as np
-import pdb
+import pdb, traceback
 
 def nearlyEqual( a, b ):
    return np.all( abs( a - b ) < 1e-6 )
@@ -12,6 +12,7 @@ def runTest( test, name=None ):
         test()
     except:
         print( "FAIL:", name )
+        traceback.print_exc()
         pdb.post_mortem()
         return False
     print( "PASS:", name )

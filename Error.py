@@ -86,8 +86,8 @@ class CrossEntropy( Error ):
 
    def f( self, target, predicted ):
       if isinstance( predicted, Dual ):
-         return - ( target * predicted.log() )
-      return -( target * np.log( predicted ) )
+         return - ( predicted.log() * target )
+      return -( np.log( predicted ) * target )
 
    def df( self, target, predicted ):
       return -( target / predicted )
@@ -99,8 +99,9 @@ class KlDivergence( Error ):
 
    def f( self, target, predicted ):
       if isinstance( predicted, Dual ):
-         return target * ( target / predicted ).log().where( target <= 0, 0 )
-      return target * np.where( target > 0, np.log( target / predicted + inft ), 0 )
+         target = type(predicted)( target, 0, predicted.n_ )
+         return target * ( target / predicted ).where( target <= 0, 1 ).log()
+      return target * np.log( np.where( target > 0, target / predicted, 1 ) )
 
    def df( self, target, predicted ):
       return -( target / predicted )
@@ -114,11 +115,11 @@ class JsDivergence( Error ):
       m = ( predicted + target ) / 2
       if isinstance( m, Dual ):
          target = type(m)( target, 0, m.n_ )
-         tpart = target * ( target / m ).log().where( target <= 0, 0 )
-         ppart = predicted * ( predicted / m ).log().where( predicted <= 0, 0 )
+         tpart = target * ( target / m ).where( target <= 0, 1 ).log()
+         ppart = predicted * ( predicted / m ).where( predicted <= 0, 1 ).log()
          return ( tpart + ppart ) / 2
-      tpart = target * np.where( target > 0, np.log( target / m ), 0 )
-      ppart = predicted * np.where( predicted > 0, np.log( predicted / m ), 0 )
+      tpart = target * np.log( np.where( target > 0, target / m , 1 ) )
+      ppart = predicted * np.log( np.where( predicted > 0, predicted / m , 1 ) )
       return ( tpart + ppart ) / 2
 
    def df( self, target, predicted ):
