@@ -14,7 +14,7 @@ import pdb
 
 # TODO: Elision
 
-class ScnnRegressor( object ):
+class SCNN( object ):
    _estimator_type = "regressor"
 
    def __init__( self, inputSize, outputSize, hiddenSize=100,
@@ -89,9 +89,10 @@ class ScnnRegressor( object ):
          X = np.append( X, np.zeros( ( X.shape[ 0 ], self.valueInSize_ - X.shape[ 1 ] ) ), 1 )
       self.valueIn_ = Dual( X, 0, self.nParameters_ )
       for n in range( self.valueOutSize_ ):
-         self.valueOut_[ :, n ] = self.valueIn_.matmul( self.weight_[ :, n ] )
+         m = n + 1
+         self.valueOut_[ :, n:m] = self.valueIn_.matmul( self.weight_[ :, n:m ] )
          if n < self.hiddenSize_:
-            self.valueIn_[ :, self.inputSize_ + n ] = self.hiddenActivation_( self.valueOut_[ :, n ] )
+            self.valueIn_[ :, self.inputSize_ + n:self.inputSize_ + m ] = self.hiddenActivation_( self.valueOut_[ :, n:m ] )
       return self.outputActivation_( self.valueOut_[ :, self.hiddenSize_: ] )
 
    def predictRecurrent_( self, X, elide ):
@@ -103,8 +104,9 @@ class ScnnRegressor( object ):
       for s in range( len( X ) ):
          self.valueIn_[ :self.inputSize_ ] = X[ s ]
          for n in range( self.valueOutSize_ ):
-            self.valueOut_[ n ] = self.valueIn_.matmul( self.weight_[ :, n ] )
-            self.valueIn_[ self.inputSize_ + n ] = self.hiddenActivation_( self.valueOut_[ n ] )
+            m = n + 1
+            self.valueOut_[ n:m ] = self.valueIn_.matmul( self.weight_[ :, n:m ] )
+            self.valueIn_[ self.inputSize_ + n:self.inputSize_ + m ] = self.hiddenActivation_( self.valueOut_[ n:m ] )
          pred[ s ] = self.outputActivation_( self.valueOut_[ self.hiddenSize_: ] )
       return pred
 

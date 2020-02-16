@@ -210,6 +210,10 @@ class DualNumpy( DualNumber ):
         return type(self)( real, inft )
     def sum( self, axis ):
         return type(self)( np.sum( self.x_, axis ), np.sum( self.e_, axis ) )
+    def reshape( self, shape ):
+        real = np.reshape( self.x_, shape )
+        inft = np.reshape( self.e_, shape )
+        return type(self)( real, inft )
     def concatenate( self ):
         pass
 
@@ -244,6 +248,12 @@ class DualGrad( DualNumpy ):
             inft = self.e_ - other.e_
             return DualGrad( real, inft, self.n_ )
         return DualGrad( self.x_ - other, self.e_, self.n_ )
+    def __rsub__( self, other ):
+        if isinstance( other, DualNumber ):
+            real = other.x_ - self.x_
+            inft = other.e_ - self.e_
+            return type(self)( real, inft )
+        return type(self)( other - self.x_, -self.e_, self.n_ )
     def __mul__( self, other ):
         if isinstance( other, DualNumber ):
             real = self.x_ * other.x_
@@ -268,7 +278,7 @@ class DualGrad( DualNumpy ):
             tp = list( range( len( other.e_.shape ) ) )
             tp[ 0 ] = 1
             tp[ 1 ] = 0
-            re = np.dot( self.x_, other.e_.transpose( tp ) ).transpose( tp )
+            re = np.dot( self.x_, other.e_ ).transpose( tp )
             er = np.dot( self.e_, other.x_ )
             inft = re + er
             return type(self)( real, inft, self.n_ )
@@ -323,4 +333,8 @@ class DualGrad( DualNumpy ):
             return type(self)( real, inft, self.n_ )
         real = np.where( condition, other, self.x_ )
         inft = np.where( condition, 0, self.e_ )
+        return type(self)( real, inft, self.n_ )
+    def reshape( self, shape ):
+        real = np.reshape( self.x_, shape )
+        inft = np.reshape( self.e_, ( self.n_, *shape ) )
         return type(self)( real, inft, self.n_ )

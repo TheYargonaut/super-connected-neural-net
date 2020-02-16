@@ -2,6 +2,9 @@ from DualNumber.DualArithmetic import DualNumber as Dual, DualNumpy
 
 import numpy as np
 
+# to avoid zeros in logarithms
+inft = 1e-18
+
 class Error( object ):
    def __init__( self ):
       '''abstract class'''
@@ -96,8 +99,8 @@ class KlDivergence( Error ):
 
    def f( self, target, predicted ):
       if isinstance( predicted, Dual ):
-         return target * ( target / predicted ).log()
-      return target * np.log( target / predicted )
+         return target * ( target / predicted ).log().where( target <= 0, 0 )
+      return target * np.where( target > 0, np.log( target / predicted + inft ), 0 )
 
    def df( self, target, predicted ):
       return -( target / predicted )
@@ -108,10 +111,15 @@ class JsDivergence( Error ):
       pass
 
    def f( self, target, predicted ):
-      m = ( target + predicted ) / 2
+      m = ( predicted + target ) / 2
       if isinstance( m, Dual ):
-         return ( target * ( target / m ).log() + predicted * ( predicted / m ).log() ) / 2
-      return ( target * np.log( target / m ) + predicted * np.log( predicted / m ) ) / 2
+         target = type(m)( target, 0, m.n_ )
+         tpart = target * ( target / m ).log().where( target <= 0, 0 )
+         ppart = predicted * ( predicted / m ).log().where( predicted <= 0, 0 )
+         return ( tpart + ppart ) / 2
+      tpart = target * np.where( target > 0, np.log( target / m ), 0 )
+      ppart = predicted * np.where( predicted > 0, np.log( predicted / m ), 0 )
+      return ( tpart + ppart ) / 2
 
    def df( self, target, predicted ):
       if not isinstance( predicted, Dual ):

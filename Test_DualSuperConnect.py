@@ -1,4 +1,4 @@
-from DualSuperConnect import ScnnRegressor
+from DualSuperConnect import SCNN
 
 from DualNumber.TestLib import runTest
 
@@ -18,16 +18,16 @@ def test():
    # train models
    iters = 100
    name = [ "0", "1", "2", "3", "4" ]
-   model = [ ScnnRegressor( 8, 1, 0, update=Update.Rprop() ),
-             ScnnRegressor( 8, 1, 1, update=Update.Rprop() ),
-             ScnnRegressor( 8, 1, 2, update=Update.Rprop() ),
-             ScnnRegressor( 8, 1, 3, update=Update.Rprop() ),
-             ScnnRegressor( 8, 1, 4, update=Update.Rprop() ) ]
+   model = [ SCNN( 8, 1, 0, update=Update.Rprop() ),
+             SCNN( 8, 1, 1, update=Update.Rprop() ),
+             SCNN( 8, 1, 2, update=Update.Rprop() ),
+             SCNN( 8, 1, 3, update=Update.Rprop() ),
+             SCNN( 8, 1, 4, update=Update.Rprop() ) ]
    error = np.zeros( ( len( model ), iters ) )
    for i in range( iters ):
       for m in range( len( model ) ):
          error[ m, i ] = model[ m ].partial_fit( X, Y )
-      print( i, "complete" )
+      print( i + 1, "complete" )
    
    # plot results
    plt.figure()

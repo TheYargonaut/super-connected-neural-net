@@ -6,7 +6,7 @@ import pdb
 
 # TODO: Let more general 'training' class handle batches, iterations, early stopping, cooling update
 
-class LlsRegressor( object ):
+class LLS( object ):
    '''Linear Least-Squares estimator using gradient descent with dual numbers'''
    _estimator_type = "regressor"
 
@@ -47,7 +47,10 @@ class LlsRegressor( object ):
    def partial_fit( self, X, Y ):
       '''X and Y should both be 2d numpy arrays'''
       error = self.error( X, Y )
-      grad = np.average( error.e_, 1 ).reshape( self.weight_.x_.shape )
+      grad = error.e_
+      while len( grad.shape ) > 1:
+         grad = np.average( grad, 1 )
+      grad = grad.reshape( self.weight_.x_.shape )
       self.weight_ = self.update_( self.weight_, grad )
       return np.average( error.x_ )
 

@@ -1,4 +1,4 @@
-from DualLeastSquares import LlsRegressor
+from DualLeastSquares import LLS
 from DualNumber.TestLib import runTest
 
 import Update
@@ -28,16 +28,17 @@ def test():
    
    iters = 20000
    name = [ "RMSProp", "Momentum", "Nesterov", "SGD", "Rprop", "Adam" ]
-   model = [ LlsRegressor( 1, 1, update=Update.RmsProp() ),
-             LlsRegressor( 1, 1, update=Update.Momentum( 1e-7 ) ),
-             LlsRegressor( 1, 1, update=Update.NesterovMomentum( 1e-7 ) ),
-             LlsRegressor( 1, 1, update=Update.Sgd( 1e-7 ) ),
-             LlsRegressor( 1, 1, update=Update.Rprop() ),
-             LlsRegressor( 1, 1, update=Update.Adam() ) ]
+   model = [ LLS( 1, 1, update=Update.RmsProp() ),
+             LLS( 1, 1, update=Update.Momentum( 1e-7 ) ),
+             LLS( 1, 1, update=Update.NesterovMomentum( 1e-7 ) ),
+             LLS( 1, 1, update=Update.Sgd( 1e-7 ) ),
+             LLS( 1, 1, update=Update.Rprop() ),
+             LLS( 1, 1, update=Update.Adam() ) ]
    error = np.zeros( ( len( model ), iters ) )
    for i in range( iters ):
       for m in range( len( model ) ):
          error[ m, i ] = model[ m ].partial_fit( trainX, trainY )
+      print( i + 1, "complete" )
 
    # plot results
    plt.figure()

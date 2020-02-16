@@ -118,7 +118,7 @@ class Softmax( object ):
    def f( self, value ):
       if isinstance( value, Dual ):
          raw = ( value / self.t_ ).exp()
-         return raw / raw.sum( -1 )
+         return raw / raw.sum( -1 ).reshape( ( *raw.x_.shape[:-1], 1 ) )
       raw = np.exp( value / self.t_ )
       return raw / np.sum( raw, -1 )
 
