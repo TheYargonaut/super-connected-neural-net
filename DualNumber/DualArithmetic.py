@@ -149,6 +149,8 @@ class DualNumber( object ):
         return self.x_ > other
     
     # utilities
+    def __len__( self ):
+        return len( self.x_ )
     def where( self, condition, other ):
         '''where condition is true, substitute from other into self for return'''
         if isinstance( other, DualNumber ):
@@ -164,11 +166,11 @@ class DualNumpy( DualNumber ):
     def __init__( self, x=0, e=None ):
         self.x_ = np.array( x )
         if e is None:
-            self.e_ = np.zeros_like( x )
+            self.e_ = np.zeros_like( x, dtype=float )
         else:
-            self.e_ = np.array( e )
+            self.e_ = np.array( e, dtype=float )
             if not self.e_.shape:
-                self.e_ = np.full( self.x_.shape, e )
+                self.e_ = np.full( self.x_.shape, e, dtype=float )
         assert self.x_.shape == self.e_.shape, 'size mismatch'
     def __str__( self ):
         return "{} + ({})e".format( self.x_, self.e_ )
@@ -198,7 +200,7 @@ class DualNumpy( DualNumber ):
             self.x_[ key ] = value.x_
             self.e_[ key ] = value.e_
         self.x_[ key ] = value
-        self.e_[ key ] = np.zeros_like( self.e_[ key ] )
+        self.e_[ key ] = np.zeros_like( self.e_[ key ], dtype=float )
     def where( self, condition, other ):
         '''where condition is true, substitute from other into self for return '''
         if isinstance( other, DualNumber ):
@@ -224,13 +226,13 @@ class DualGrad( DualNumpy ):
         '''n = number of independant variables to represent in e
            e will have one dimension more than x'''
         self.n_ = n
-        self.x_ = np.array( x )
+        self.x_ = np.array( x, dtype=float  )
         if e is None:
-            self.e_ = np.zeros( ( n, *self.x_.shape ) )
+            self.e_ = np.zeros( ( n, *self.x_.shape ), dtype=float  )
         else:
-            self.e_ = np.array( e )
+            self.e_ = np.array( e, dtype=float  )
             if not self.e_.shape:
-                self.e_ = np.full( ( n, *self.x_.shape ), e )
+                self.e_ = np.full( ( n, *self.x_.shape ), e, dtype=float  )
 
         # can't realign where e is a different size, so just assert
         assert ( n, *self.x_.shape ) == self.e_.shape, 'size mismatch'
@@ -310,18 +312,19 @@ class DualGrad( DualNumpy ):
     
     # utilities
     def __getitem__( self, key ):
+        eKey = ( slice( None ), key ) if not isinstance( key, tuple ) else ( slice(None), *key )
         ret = type(self)( 0, 0, self.n_ )
         ret.x_ = self.x_[ key ]
-        ret.e_ = self.e_[ ( slice(None), *key ) ]
+        ret.e_ = self.e_[ eKey ]
         return ret
     def __setitem__( self, key, value ):
-        eKey = ( slice(None), *key )
+        eKey = ( slice( None ), key ) if not isinstance( key, tuple ) else ( slice(None), *key )
         if isinstance( value, DualGrad ):
             self.x_[ key ] = value.x_
             self.e_[ eKey ] = value.e_
             return
         self.x_[ key ] = value
-        self.e_[ eKey ] = np.zeros_like( self.e_[ eKey ] )
+        self.e_[ eKey ] = np.zeros_like( self.e_[ eKey ], dtype=float )
     def sum( self, axis ):
         eAxis = axis if axis < 0 else axis + 1
         return type(self)( np.sum( self.x_, axis ), np.sum( self.e_, eAxis ), self.n_ )

@@ -1,4 +1,4 @@
-import Activation, Error, Update
+import Activation, Error, Regularize, Update
 from DataFetch import fetch
 from DualNumber.TestLib import runTest
 from DualLeastSquares import LLS
@@ -18,8 +18,10 @@ import pdb
 np.seterr(invalid='raise')
 
 # Data
-n_components = 100
-train_samples = 5000 # max 70000; Memory error at 5000, need to do some batching to make it work
+n_components = 64
+train_samples = 50000 # max 70000
+batch = 100
+iters = 32
 X, y = fetch( 'mnist', lambda : fetch_openml( 'mnist_784', version=1, return_X_y=True ) )
 print( 'Data Fetch Complete' )
 random_state = check_random_state( 0 )
@@ -36,27 +38,23 @@ scaler = StandardScaler()
 X_train = scaler.fit_transform( pca.fit_transform( X_train ) )
 X_test = scaler.transform( pca.transform( X_test ) )
 Y_train, Y_test = fct( y_train ), fct( y_test )
+print( 'Preprocessing Complete' )
 
-def linearMnist():
-   model = LLS( n_components, Y_train.shape[ 1 ],
-                outputAct=Activation.Softmax(),
-                update=Update.Rprop(),
-                error=Error.JsDivergence() )
-   iters = 10
+def testMnist( model ):
    loss = np.zeros( iters )
    train_acc = np.zeros( iters + 1 )
    test_acc = np.zeros( iters + 1 )
    for i in range( iters ):
-      raw_pred = model.predict( X_train ).x_
-      train_acc[ i ] = np.average( np.argmax( raw_pred, axis=1 ) == y_train )
-      raw_pred = model.predict( X_test ).x_
-      test_acc[ i ] = np.average( np.argmax( raw_pred, axis=1 ) == y_test )
-      loss[ i ] = model.partial_fit( X_train, Y_train )
+      raw_pred = model.predict( X_train, maxBatch=batch ).x_
+      train_acc[ i ] = np.average( np.argmax( raw_pred, axis=1 ) != y_train )
+      raw_pred = model.predict( X_test, maxBatch=batch ).x_
+      test_acc[ i ] = np.average( np.argmax( raw_pred, axis=1 ) != y_test )
+      loss[ i ] = model.partial_fit( X_train, Y_train, maxBatch=batch )
       print( i + 1, 'complete' )
-   raw_pred = model.predict( X_train ).x_
-   train_acc[ -1 ] = np.average( np.argmax( raw_pred, axis=1 ) == y_train )
-   raw_pred = model.predict( X_test ).x_
-   test_acc[ -1 ] = np.average( np.argmax( raw_pred, axis=1 ) == y_test )
+   raw_pred = model.predict( X_train, maxBatch=batch ).x_
+   train_acc[ -1 ] = np.average( np.argmax( raw_pred, axis=1 ) != y_train )
+   raw_pred = model.predict( X_test, maxBatch=batch ).x_
+   test_acc[ -1 ] = np.average( np.argmax( raw_pred, axis=1 ) != y_test )
    
    # Plot training results
    plt.figure()
@@ -66,15 +64,30 @@ def linearMnist():
 
    plt.title( 'Accuracy Curves' )
    plt.semilogy( train_acc, label='train' )
-   plt.semilogy( test_acc, lable='test')
+   plt.semilogy( test_acc, label='test')
    plt.legend()
    plt.show()
 
    pdb.set_trace()
 
+def linearMnist():
+   model = LLS( n_components, 10,
+                outputAct=Activation.Softmax(),
+                update=Update.Rprop(),
+                error=Error.JsDivergence(),
+                regularization=Regularize.Ridge() )
+   testMnist( model )
+
 def scnnMnist():
-   pass
+   model = SCNN( n_components, 10,
+                 hiddenSize=4,
+                 hiddenAct=Activation.Elu(),
+                 outputAct=Activation.Softmax(),
+                 update=Update.Rprop(),
+                 error=Error.JsDivergence(),
+                 regularization=Regularize.Ridge() )
+   testMnist( model )
 
 if __name__  == "__main__":
-   runTest( linearMnist )
-   # runTest( scnnMnist )
+   #runTest( linearMnist )
+   runTest( scnnMnist )
