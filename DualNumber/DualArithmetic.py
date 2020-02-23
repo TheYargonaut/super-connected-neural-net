@@ -51,7 +51,9 @@ class DualNumber( object ):
         return type(self)( other ) / self
     def __pow__( self, other ):
         if isinstance( other, DualNumber ):
-            raise NotImplementedError
+            real = self.x_ ** other.x_
+            inft = real * ( other.x_ * self.e_ / self.x_ + other.e_ * np.log( self.x_ ) )
+            return type(self)( real, inft )
         inft = other * self.e_ * ( self.x_ ** (other - 1) )
         return type(self)( self.x_ ** other, inft )
 
@@ -60,29 +62,36 @@ class DualNumber( object ):
         if isinstance( other, DualNumber ):
             self.x_ += other.x_
             self.e_ += other.e_
-        self.x_ += other
+        else:
+            self.x_ += other
     def __isub__( self, other ):
         if isinstance( other, DualNumber ):
             self.x_ -= other.x_
             self.e_ -= other.e_
-        self.x_ -= other
+        else:
+            self.x_ -= other
     def __imul__( self, other ):
         if isinstance( other, DualNumber ):
             self.e_ = self.x_ * other.e_ + self.e_ * other.x_
             self.x_ *= other.x_
-        self.x_ *= other
-        self.e_ *= other
+        else:
+            self.x_ *= other
+            self.e_ *= other
     def __itruediv__( self, other ):
         if isinstance( other, DualNumber ):
             self.e_ = ( self.e_ * other.x_ - self.x_ * other.e_ ) / ( other.x_ ** 2 )
             self.x_ /= other.x_
-        self.x_ /= other
-        self.e_ /= other
+        else:
+            self.x_ /= other
+            self.e_ /= other
     def __ipow__( self, other ):
         if isinstance( other, DualNumber ):
-            raise NotImplementedError
-        self.e_ *= other * ( self.x_ ** (other - 1) )
-        self.x_ **= other
+            real = self.x_ ** other.x_
+            self.e_ = real * ( other.x_ * self.e_ / self.x_ + other.e_ * np.log( self.x_ ) )
+            self.x_ = real
+        else:
+            self.e_ *= other * ( self.x_ ** (other - 1) )
+            self.x_ **= other
     def iexp( self ):
         raise NotImplementedError
     def isin( self ):
@@ -222,20 +231,13 @@ class DualNumpy( DualNumber ):
 class DualGrad( DualNumpy ):
     '''Dual numbers using Numpy arrays to represent multiple
     independant variables with dual numbers'''
-    def __init__( self, x=0, e=None, n=1 ):
+    def __init__( self, x=0, e=0, n=1 ):
         '''n = number of independant variables to represent in e
            e will have one dimension more than x'''
         self.n_ = n
-        self.x_ = np.array( x, dtype=float  )
-        if e is None:
-            self.e_ = np.zeros( ( n, *self.x_.shape ), dtype=float  )
-        else:
-            self.e_ = np.array( e, dtype=float  )
-            if not self.e_.shape:
-                self.e_ = np.full( ( n, *self.x_.shape ), e, dtype=float  )
-
-        # can't realign where e is a different size, so just assert
-        assert ( n, *self.x_.shape ) == self.e_.shape, 'size mismatch'
+        self.x_ = np.array( x, dtype=np.float32 )
+        self.e_ = np.zeros( ( n, *self.x_.shape ), dtype=np.float32 )
+        self.e_ += e
     
     # binary ops
     def __add__( self, other ):
@@ -272,15 +274,21 @@ class DualGrad( DualNumpy ):
         return type(self)( other, 0, self.n_ ) / self
     def __pow__( self, other ):
         if isinstance( other, DualNumber ):
-            raise NotImplementedError
+            real = self.x_ ** other.x_
+            inft = real * ( other.x_ * self.e_ / self.x_ + other.e_ * np.log( self.x_ ) )
+            return DualGrad( real, inft, self.n_ )
         return DualGrad( self.x_ ** other, other * self.e_ * ( self.x_ ** (other - 1) ), self.n_ )
     def matmul( self, other ):
         if isinstance( other, DualNumber ):
             real = np.dot( self.x_, other.x_ )
-            tp = list( range( len( other.e_.shape ) ) )
-            tp[ 0 ] = 1
-            tp[ 1 ] = 0
-            re = np.dot( self.x_, other.e_ ).transpose( tp )
+            re = np.dot( self.x_, other.e_ )
+            l = len( self.x_.shape )
+            if l > 1:
+                tp = list( range( len( re.shape ) ) )
+                tp[ 0 ] = l - 1
+                for i in range( 1, l ):
+                    tp[ i ] = i - 1
+                re = re.transpose( tp )
             er = np.dot( self.e_, other.x_ )
             inft = re + er
             return type(self)( real, inft, self.n_ )

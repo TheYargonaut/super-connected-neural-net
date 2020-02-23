@@ -1,5 +1,8 @@
 import DualArithmetic as DA
+from TensorDual import DualTensor
+
 from TestLib import runSuite
+
 import pdb
 import numpy as np
 
@@ -28,11 +31,11 @@ def dualScalarTest( DualType ):
     assert y.e_ == -1
     y = a.where( b < 1, b )
     assert y == b
-    y = 1 + a
+    y = 1.0 + a
     assert y == 11
-    y = 3 * b
+    y = 3.0 * b
     assert y == -3
-    y = 1 / c
+    y = 1.0 / c
     assert y == -1
 
 def dualTensorTest( DualType ):
@@ -96,11 +99,14 @@ suite = []
 suite.append( ( lambda: dualScalarTest( DA.DualNumber ), "DualNumber Scalar Test" ) )
 suite.append( ( lambda: dualScalarTest( DA.DualNumpy ), "DualNumpy Scalar Test" ) )
 suite.append( ( lambda: dualScalarTest( DA.DualGrad ), "DualGrad Scalar Test" ) )
+suite.append( ( lambda: dualScalarTest( DualTensor ), "DualTensor Scalar Test" ) )
 
 suite.append( ( lambda: dualTensorTest( DA.DualNumpy ), "DualNumpy Tensor Test" ) )
 suite.append( ( lambda: dualTensorTest( DA.DualGrad ), "DualGrad Tensor Test" ) )
+suite.append( ( lambda: dualTensorTest( DualTensor ), "DualTensor Tensor Test" ) )
 
 suite.append( ( lambda: dualGradientTest( DA.DualGrad ), "DualGrad Gradient Test" ) )
+suite.append( ( lambda: dualGradientTest( DualTensor ), "DualTensor Gradient Test" ) )
 
 if __name__ == "__main__":
    runSuite( suite )

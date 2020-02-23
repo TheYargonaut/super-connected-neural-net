@@ -18,10 +18,10 @@ import pdb
 np.seterr(invalid='raise')
 
 # Data
-n_components = 64
-train_samples = 50000 # max 70000
+n_components = 16
+train_samples = 500 # max 70000
 batch = 100
-iters = 32
+iters = 8
 X, y = fetch( 'mnist', lambda : fetch_openml( 'mnist_784', version=1, return_X_y=True ) )
 print( 'Data Fetch Complete' )
 random_state = check_random_state( 0 )
@@ -68,8 +68,6 @@ def testMnist( model ):
    plt.legend()
    plt.show()
 
-   pdb.set_trace()
-
 def linearMnist():
    model = LLS( n_components, 10,
                 outputAct=Activation.Softmax(),
@@ -89,5 +87,5 @@ def scnnMnist():
    testMnist( model )
 
 if __name__  == "__main__":
-   #runTest( linearMnist )
+   runTest( linearMnist )
    runTest( scnnMnist )
