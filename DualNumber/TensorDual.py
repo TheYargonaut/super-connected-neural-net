@@ -1,4 +1,7 @@
-from DualArithmetic import DualNumber, DualGrad
+try:
+    from DualArithmetic import DualNumber, DualGrad
+except:
+    from DualNumber.DualArithmetic import DualNumber, DualGrad
 import tensorflow as tf
 
 # Handle dual numbers with Tensorflow. This takes a functional approach to better acommodate low-level tensorflow
@@ -21,7 +24,19 @@ def exp( xReal, xInft ):
 @tf.function
 def tanh( xReal, xInft ):
     real = tf.math.tanh( xReal )
-    inft = tf.math.multiply( xInft, tf.math.subtract( 1, tf.math.pow( real, 2 ) ) )
+    inft = tf.math.multiply( xInft, tf.math.subtract( 1.0, tf.math.pow( real, 2.0 ) ) )
+    return real, inft
+
+@tf.function
+def abs( xReal, xInft ):
+    real = tf.math.abs( xReal )
+    inft = tf.where( xReal > 0, xInft, -xInft )
+    return real, inft
+
+@tf.function
+def neg( xReal, xInft ):
+    real = tf.math.negative( xReal )
+    inft = tf.math.negative( xInft )
     return real, inft
 
 # Binary Operators
@@ -40,8 +55,8 @@ def subtract( xReal, xInft, yReal, yInft ):
 
 @tf.function
 def multiply( xReal, xInft, yReal, yInft ):
-    real = tf.math.multiply( xReal, yReal )
-    inft = tf.math.add( tf.math.multiply( xReal, yInft ), tf.math.multiply( xInft, yReal ) )
+    real = tf.math.multiply_no_nan( xReal, yReal )
+    inft = tf.math.add( tf.math.multiply_no_nan( xReal, yInft ), tf.math.multiply_no_nan( xInft, yReal ) )
     return real, inft
 
 @tf.function
@@ -55,15 +70,33 @@ def divide( xReal, xInft, yReal, yInft ):
 @tf.function
 def power( xReal, xInft, yReal, yInft ):
     real = tf.math.pow( xReal, yReal )
-    inft = tf.math.multiply(
-       real,
-       tf.math.add(
-          tf.math.divide(
-             tf.math.multiply( yReal, xInft ),
-             xReal ),
-          tf.math.multiply(
-             yInft,
-             tf.math.log( xReal ) ) ) )
+    if yInft:
+        inft = tf.math.multiply_no_nan(
+        real,
+        tf.math.add(
+            tf.math.divide(
+                tf.math.multiply_no_nan( yReal, xInft ),
+                xReal ),
+            tf.math.multiply_no_nan(
+                yInft,
+                tf.math.log( xReal ) ) ) )
+        return real, inft
+    inft = tf.math.multiply_no_nan( tf.math.pow( xReal, tf.math.subtract( yReal, 1.0 ) ), tf.math.multiply_no_nan( xInft, yReal ) )
+    return real, inft
+
+# utilities
+
+@tf.function
+def where( condition, xReal, xInft, yReal, yInft ):
+    real = tf.where( condition, xReal, yReal )
+    inft = tf.where( condition, xInft, yInft )
+    return real, inft
+
+@tf.function
+def sum( xReal, xInft, axis=0 ):
+    eAxis = axis if axis < 0 else axis + 1
+    real = tf.math.reduce_sum( xReal, axis )
+    inft = tf.math.reduce_sum( xInft, eAxis )
     return real, inft
 
 # Wrapper class

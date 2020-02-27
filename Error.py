@@ -2,9 +2,6 @@ from DualNumber.DualArithmetic import DualNumber as Dual, DualNumpy
 
 import numpy as np
 
-# to avoid zeros in logarithms
-inft = 1e-18
-
 class Error( object ):
    def __init__( self ):
       '''abstract class'''

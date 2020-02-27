@@ -29,11 +29,11 @@ class Ridge( object ):
 
    def f( self, weight ):
       if isinstance( weight, Dual ):
-         return ( weight ** 2 ) * self.strength_
-      return self.strength_ * np.power( weight, 2 )
+         return ( weight ** 2 ) * self.strength_ / weight.x_.size
+      return self.strength_ * np.power( weight, 2 ) / weight.size
 
    def df( self, weight ):
-      return weight * self.dStrength_
+      return weight * self.dStrength_ / getattr( weight, 'x_', weight ).size
 
 # TODO
 #class Lasso
