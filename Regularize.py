@@ -17,10 +17,10 @@ class Zero( object ):
       pass
 
    def f( self, weight ):
-      return 0
+      return weight * 0
 
    def df( self, weight ):
-      return 0
+      return weight * 0
 
 class Ridge( object ):
    def __init__( self, strength=1e-4 ):

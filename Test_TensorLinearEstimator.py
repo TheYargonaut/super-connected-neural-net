@@ -1,21 +1,24 @@
-from DualLeastSquares import LLS
+from TensorLinearEstimator import TLE
+import TensorUpdate as tu
 from DualNumber.TestLib import runTest
 
 import Update
 
 import matplotlib.pyplot as plt
+import tensorflow as tf
 import numpy as np
 
 # System test for update classes and Dual Least Squares
 
 def test():
    # base data
-   X = np.random.randn( 1000, 1 ) * 10 + 50
+   X = tf.random.normal( shape=[1000, 1], mean=50, stddev=10, dtype=tf.float32 )
    Y = X * 2 - 10
+   zinft = tf.zeros( [2,1,1], dtype=tf.float32 )
 
    # add noise
-   X += np.random.randn( 1000, 1 ) * 2
-   Y += np.random.randn( 1000, 1 ) * 2
+   X += tf.random.normal( shape=[1000, 1], mean=0, stddev=2, dtype=tf.float32 )
+   Y += tf.random.normal( shape=[1000, 1], mean=0, stddev=2, dtype=tf.float32 )
 
    # split
    trainX = X[ :900 ]
@@ -24,20 +27,16 @@ def test():
    testY = Y[ 900: ]
 
    # for prediction line
-   plotX = np.array( [ min( X ), max( X ) ] )
+   plotX = tf.constant( [ [ tf.math.reduce_min( X ).numpy() ], [ tf.math.reduce_max( X ).numpy() ] ] )
    
    iters = 2000
-   name = [ "RMSProp", "Momentum", "Nesterov", "SGD", "Rprop", "Adam" ]
-   model = [ LLS( 1, 1, update=Update.RmsProp() ),
-             LLS( 1, 1, update=Update.Momentum( 1e-7 ) ),
-             LLS( 1, 1, update=Update.NesterovMomentum( 1e-7 ) ),
-             LLS( 1, 1, update=Update.Sgd( 1e-7 ) ),
-             LLS( 1, 1, update=Update.Rprop() ),
-             LLS( 1, 1, update=Update.Adam() ) ]
+   name = [ "Simple TF" ]
+   model = [ TLE( 1, 1, update=tu.Rprop() ) ]
    error = np.zeros( ( len( model ), iters ) )
    for i in range( iters ):
       for m in range( len( model ) ):
-         error[ m, i ] = model[ m ].partial_fit( trainX, trainY )
+         pf = model[ m ].partial_fit( trainX, zinft, trainY, zinft )
+         error[ m, i ] = pf[ 0 ].numpy()
       print( i + 1, "complete" )
 
    # plot results
@@ -45,7 +44,7 @@ def test():
    plt.title( 'Data Space' )
    plt.scatter( trainX, trainY, label='train' )
    plt.scatter( testX, testY, label='test' )
-   plt.plot( plotX, model[ 4 ].predict( plotX ).x_, label='prediction' )
+   plt.plot( plotX, model[ 0 ].predict( plotX, zinft )[ 0 ].numpy(), label='prediction' )
    plt.legend()
 
    plt.figure()
@@ -55,6 +54,9 @@ def test():
    plt.legend()
 
    plt.show()
+
+   print( model[ 0 ].weight_ )
+   print( model[ 0 ].bias_ )
 
 if __name__ == "__main__":
    runTest( test )

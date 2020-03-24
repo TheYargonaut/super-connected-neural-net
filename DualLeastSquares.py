@@ -5,8 +5,6 @@ from Train import batch
 import numpy as np
 import pdb
 
-# TODO: Let more general 'training' class handle batches, iterations, early stopping, cooling update
-
 class LLS( object ):
    '''Linear Least-Squares estimator using gradient descent with dual numbers'''
    _estimator_type = "regressor"
@@ -52,10 +50,10 @@ class LLS( object ):
          portion = float( len( bx ) ) / len( X )
          bgrad, bloss = self.trainGrad_( bx, by )
          grad += bgrad * portion
-         loss = bloss * portion
+         loss += bloss * portion
       grad += self.regularizeGrad_()
       self.weight_ = self.update_( self.weight_, grad )
-      return np.average( loss )
+      return loss
 
    def predict( self, X, maxBatch=None ):
       '''X should be 2d numpy array'''

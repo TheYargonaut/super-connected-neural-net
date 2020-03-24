@@ -2,22 +2,22 @@ from DualNumber import TensorDual as td
 
 import tensorflow as tf
 
-@tf.function
+#@tf.function
 def makeInft( shape, total, first ):
-    inft = tf.eye( total )
+    inft = tf.eye( total, dtype=tf.float32 )
     inft = inft[ :, first : first + tf.reduce_prod( shape ) ]
     return tf.reshape( inft, ( total, *shape ) )
 
-@tf.function
+#@tf.function
 def zero( shape, total, first=0 ):
-    real = tf.zeros( shape )
+    real = tf.zeros( shape, dtype=tf.float32 )
     inft = makeInft( real.shape, total, first )
     return real, inft
 
 @tf.function
 def normal( shape, total, first=0, mean=0, std=1 ):
     '''randomize initial weights'''
-    real = tf.random.normal( shape, mean=mean, stddev=std )
+    real = tf.random.normal( shape, mean=mean, stddev=std, dtype=tf.float32 )
     inft = makeInft( real.shape, total, first )
     return real, inft
 

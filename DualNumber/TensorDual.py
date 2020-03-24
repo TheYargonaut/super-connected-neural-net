@@ -84,6 +84,12 @@ def power( xReal, xInft, yReal, yInft ):
     inft = tf.math.multiply_no_nan( tf.math.pow( xReal, tf.math.subtract( yReal, 1.0 ) ), tf.math.multiply_no_nan( xInft, yReal ) )
     return real, inft
 
+def tensordot( xReal, xInft, yReal, yInft, axes=[ [ -1 ], [ 0 ] ] ):
+    real = tf.tensordot( xReal, yReal, axes=axes )
+    ie = [ [ ( a if a < 0 else a + 1 ) for a in t ] for t in axes ]
+    inft = tf.tensordot( yInft, xReal, axes=[ ie[ 1 ], axes[ 0 ] ] ) + tf.tensordot( xInft, yReal, axes=[ ie[ 0 ], axes[ 1 ] ] )
+    return real, inft
+
 # utilities
 
 @tf.function
@@ -93,10 +99,10 @@ def where( condition, xReal, xInft, yReal, yInft ):
     return real, inft
 
 @tf.function
-def sum( xReal, xInft, axis=0 ):
+def sum( xReal, xInft, axis=0, keepdims=False ):
     eAxis = axis if axis < 0 else axis + 1
-    real = tf.math.reduce_sum( xReal, axis )
-    inft = tf.math.reduce_sum( xInft, eAxis )
+    real = tf.math.reduce_sum( xReal, axis, keepdims )
+    inft = tf.math.reduce_sum( xInft, eAxis, keepdims )
     return real, inft
 
 # Wrapper class

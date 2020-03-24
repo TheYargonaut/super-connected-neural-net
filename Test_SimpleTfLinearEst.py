@@ -1,4 +1,4 @@
-from DualLeastSquares import LLS
+from SimpleTfLinearEst import LinearModel
 from DualNumber.TestLib import runTest
 
 import Update
@@ -11,7 +11,7 @@ import numpy as np
 def test():
    # base data
    X = np.random.randn( 1000, 1 ) * 10 + 50
-   Y = X * 2 - 10
+   Y = X * 2# - 10 # TODO: Bias
 
    # add noise
    X += np.random.randn( 1000, 1 ) * 2
@@ -27,13 +27,8 @@ def test():
    plotX = np.array( [ min( X ), max( X ) ] )
    
    iters = 2000
-   name = [ "RMSProp", "Momentum", "Nesterov", "SGD", "Rprop", "Adam" ]
-   model = [ LLS( 1, 1, update=Update.RmsProp() ),
-             LLS( 1, 1, update=Update.Momentum( 1e-7 ) ),
-             LLS( 1, 1, update=Update.NesterovMomentum( 1e-7 ) ),
-             LLS( 1, 1, update=Update.Sgd( 1e-7 ) ),
-             LLS( 1, 1, update=Update.Rprop() ),
-             LLS( 1, 1, update=Update.Adam() ) ]
+   name = [ "Simple TF" ]
+   model = [ LinearModel( 1, 1 ) ]
    error = np.zeros( ( len( model ), iters ) )
    for i in range( iters ):
       for m in range( len( model ) ):
@@ -45,7 +40,7 @@ def test():
    plt.title( 'Data Space' )
    plt.scatter( trainX, trainY, label='train' )
    plt.scatter( testX, testY, label='test' )
-   plt.plot( plotX, model[ 4 ].predict( plotX ).x_, label='prediction' )
+   plt.plot( plotX, model[ 0 ].predict( plotX ), label='prediction' )
    plt.legend()
 
    plt.figure()

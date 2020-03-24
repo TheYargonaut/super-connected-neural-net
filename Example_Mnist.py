@@ -1,9 +1,14 @@
-import Activation, Error, Regularize, Update
+import Activation, Error, Initialize, Regularize, Update
 from DataFetch import fetch
 from DualNumber.TestLib import runTest
 from DualLeastSquares import LLS
 from DualSuperConnect import SCNN
 from SkModel import formatClassTarget as fct
+
+from TensorLinearEstimator import TLE
+import TensorActivation as ta
+import TensorUpdate as tu
+import TensorLoss as tl
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -15,12 +20,12 @@ from sklearn.utils import check_random_state
 
 import pdb
 
-np.seterr(invalid='raise')
+#np.seterr(invalid='raise')
 
 # Data
-n_components = 16
-train_samples = 500 # max 70000
-batch = 100
+n_components = 64
+train_samples = 50000 # max 70000
+batch = 1000
 iters = 8
 X, y = fetch( 'mnist', lambda : fetch_openml( 'mnist_784', version=1, return_X_y=True ) )
 print( 'Data Fetch Complete' )
@@ -78,14 +83,22 @@ def linearMnist():
 
 def scnnMnist():
    model = SCNN( n_components, 10,
-                 hiddenSize=4,
-                 hiddenAct=Activation.Elu(),
+                 hiddenSize=1,
+                 hiddenAct=Activation.Selu(),
+                 iweight=Initialize.lecun_normal,
                  outputAct=Activation.Softmax(),
                  update=Update.Rprop(),
                  error=Error.JsDivergence(),
                  regularization=Regularize.Ridge() )
    testMnist( model )
 
+def tensorLinearMnist():
+    model = TLE( n_components, 10,
+                 outputAct=ta.softmax,
+                 update=tu.Rprop(),
+                 error=tl.jsDivergence )
+    testMnist( model )
+
 if __name__  == "__main__":
-   runTest( linearMnist )
+   #runTest( linearMnist )
    runTest( scnnMnist )

@@ -33,3 +33,11 @@ def xavier( shape, total, first=0, n=None ):
       n = total
    std = np.sqrt( 1 / n )
    return normal( shape, total, first, std=std )
+
+def lecun_normal( shape, total, first=0, n=None ):
+   '''for selu.
+   n should be cardinality of inputs for layer'''
+   if not n:
+       n = total
+   std = np.sqrt( 1 / n ) / 0.87962566103423978
+   return normal( shape, total, first, std=std )

@@ -13,7 +13,7 @@ class Activation( object ):
    def df( self, value ):
       raise NotImplementedError()
 
-class Identity( object ):
+class Identity( Activation ):
    def __init__( self ):
       pass
 
@@ -25,7 +25,7 @@ class Identity( object ):
          return np.ones_like( value.x_ )
       return np.ones_like( value )
 
-class Softplus( object ):
+class Softplus( Activation ):
    '''smooth approximation of rectifier'''
 
    def __init__( self ):
@@ -41,7 +41,7 @@ class Softplus( object ):
          return 1 / ( 1 + ( -value ).exp() )
       return 1 / ( 1 + np.exp( -value ) )
 
-class Relu( object ):
+class Relu( Activation ):
    def __init__( self ):
       pass
 
@@ -55,7 +55,7 @@ class Relu( object ):
          return np.where( value < 0, 0, 1 )
       return np.where( value < 0, 0, 1 )
 
-class LeakyRelu( object ):
+class LeakyRelu( Activation ):
    def __init__( self, p=0.01 ):
       self.p_ = p
 
@@ -70,7 +70,7 @@ class LeakyRelu( object ):
          return np.where( value < 0, self.p_, 1 )
       return np.where( value < 0, self.p_, 1 )
 
-class Elu( object ):
+class Elu( Activation ):
    def __init__( self ):
       pass
 
@@ -86,7 +86,24 @@ class Elu( object ):
          return np.where( value < 0, np.exp( value.x_ ) , 1 )
       return np.where( value < 0, np.exp( value ), 1 )
 
-class Logistic( object ):
+class Selu( Activation ):
+   def __init__( self, alpha=1.67326, lam=1.05070):
+      self.alpha_ = alpha
+      self.lam_ = lam
+
+   def f( self, value ):
+      if isinstance( value, Dual ):
+         low = self.alpha_ * value.exp() - self.alpha_
+         return self.lam_ * value.where( value < 0, low )
+      low = self.alpha_ * np.exp( value ) - self.alpha_
+      return self.lam_ * np.where( value < 0, low, value )
+
+   def df( self, value ):
+      if isinstance( value, Dual ):
+         return self.lam_ * np.where( value < 0, self.alpha_ * np.exp( value.x_ ) , 1 )
+      return self.lam_ * np.where( value < 0, self.alpha_ * np.exp( value ), 1 )
+
+class Logistic( Activation ):
    def __init__( self ):
       pass
 
@@ -99,7 +116,7 @@ class Logistic( object ):
       lf = self.f( value )
       return lf * ( 1 - lf )
 
-class Tanh( object ):
+class Tanh( Activation ):
    def __init__( self ):
       pass
 
@@ -111,7 +128,7 @@ class Tanh( object ):
    def df( self, value ):
       return 1 - self.f( value ) ** 2
 
-class Softmax( object ):
+class Softmax( Activation ):
    def __init__( self, temperature=1 ):
       self.t_ = temperature
 
